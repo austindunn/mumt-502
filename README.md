@@ -1,0 +1,36 @@
+# mumt-502
+
+This repository tracks the progress I've made on my senior project in music technology at McGill University, supervised by Professor Ichiro Fujinaga. 
+
+### Papers read (all or in part)
+* Keunwoo Choi, Gyorgy Fazekas, Mark Sandler. Automatic Tagging Using Deep Convolutional Neural Networks. Queen Mary University of London, 2016.
+* Jan Schlüter, Thomas Grill. Exploring Data Augmentation For Improved Singing Voice Detection With Neural Networks. Austrian Research Institute for Artificial Intelligence, Vienna, 2015.
+ * Examined for downsampling/hop size settings for clips in dataset.
+* Philippe Hamel, Simon Lemieux, Yoshua Bengio, Douglas Eck. Temporal Pooling And Multiscale Learning For Automatic Annotation And Ranking Of Music Audio. DIRO, Université de Montréal. CIRMMT.
+ * Examined for downsampling/hop size settings for clips in dataset.
+
+### A diary of progress made
+*September 25, 2016*
+
+* Progress made before today:
+ * Read paper: Automatic Tagging Using Deep Convolutional Neural Networks, and learned a bunch of terminology.
+ * Collected a set of other papers on the subject of deep learning using convnets in audio.
+ * Installed TensorFlow, ran preliminary test program.
+ * Put together a program that, given a wav file, will create the spectrogram for the audio sample.
+* Today
+ * Created this github repository.
+ * Ran the TensorFlow tutorial on MNIST data using the Softmax Regression model.
+ * Did some research on how to break up longer wav signals into smaller "chunks" in the interest of gaining speed and more data points.
+* Questions
+ * Testing vs. validation datasets
+ * Spectrograms yielded by my script - what's up with the horizontal symmetry?
+ * In Singing Voice Detection paper, what does *frame length* refer to? Similarly, in the Automatic Annotation and Ranking paper, there is a value for *frame step*. 
+  * These values are not used in calculation for number of frames per second.
+
+*September 27, 2016*
+
+* Downloaded last night's debate between Hillary Clinton and Donald Trump, which I'll use as isolated audio for each person in running an initial session in TensorFlow.
+ * Cut out a few clips using Audacity.
+* Wrote a script that takes as input (command line for now) a wav file, then creates spectrograms for each 256-sample 'slice' of that wav file and saves it.
+* Questions
+ * How high should the resolution of the spectrogram be? This could be a good way to save some time and space. I will do research on this on my own, but any info is good.
