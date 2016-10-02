@@ -34,3 +34,13 @@ This repository tracks the progress I've made on my senior project in music tech
 * Wrote a script that takes as input (command line for now) a wav file, then creates spectrograms for each 256-sample 'slice' of that wav file and saves it.
 * Questions
  * How high should the resolution of the spectrogram be? This could be a good way to save some time and space. I will do research on this on my own, but any info is good.
+
+*September 30, 2016*
+
+* Reorganized some code, fixed chop\_frames.py to take destination of files as argument--easier to use and deposit spectrograms where they should be.
+
+*October 2, 2016*
+* Wrote code to flatten images into 1-D arrays using PIL and numpy
+* Documented tensorflow solution, to be coded tomorrow and the next day
+* Split data into testing and training directories
+
