@@ -44,3 +44,8 @@ This repository tracks the progress I've made on my senior project in music tech
 * Documented tensorflow solution, to be coded tomorrow and the next day
 * Split data into testing and training directories
 
+*October 3, 2016*
+* More work on training script...
+
+*October 4, 2016*
+* Model is training! Very slowly... 300 loops at ~19s per loop will take around 1.5 hours, which needs to be shorter in the future. For now, we just need an accuracy check, which I'll code up tomorrow morning.
