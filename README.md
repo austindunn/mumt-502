@@ -9,6 +9,9 @@ This repository tracks the progress I've made on my senior project in music tech
 * Philippe Hamel, Simon Lemieux, Yoshua Bengio, Douglas Eck. Temporal Pooling And Multiscale Learning For Automatic Annotation And Ranking Of Music Audio. DIRO, Université de Montréal. CIRMMT.
  * Examined for downsampling/hop size settings for clips in dataset.
 
+### Structure of the data
+The directory passed to my train function contains two subdirectories: *training* and *testing*. In each of these subdirectories, there will be a directory named for each of the classes. Each file in these directories, for purposes of clarity, will be named according to the following standard: "[classname]\_[n]", where n is a number from 0 to the total number of training/testing samples for that class.
+
 ### A diary of progress made
 *September 25, 2016*
 
@@ -49,3 +52,11 @@ This repository tracks the progress I've made on my senior project in music tech
 
 *October 4, 2016*
 * Model is training! Very slowly... 300 loops at ~19s per loop will take around 1.5 hours, which needs to be shorter in the future. For now, we just need an accuracy check, which I'll code up tomorrow morning.
+
+*October 5, 2016*
+* Functioning accuracy check written. Only dummy tested so far - one sample for each class, one sample for training. Led to result of 0.5.
+
+*October 7, 2016*
+* Started on standardizing file structure and reflecting that in the code.
+
+
