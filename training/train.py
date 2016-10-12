@@ -10,11 +10,13 @@ from PIL import Image
 This script contains methods for training and testing a tensorflow model
 using spectrogram data as input.
 
-Usage: python train.py [filepath] [train steps] [samples per loop]
+Usage: python train.py [filepath] [train steps] [samples per loop] [num test samples]
 where [filepath] is the location of the data
 [train steps] is the number of times to run the training loop
 [samples per loop] is the number of samples of each class to be fed to
     the model every iteration of the training loop
+[num test samples] is the number of samples of each class to be fed to
+    the model every iteration of the testing loop
 """
 
 
@@ -27,7 +29,7 @@ def train_and_test(datapath, num_train_steps, samples_per_step, num_test_samples
     b = tf.Variable(tf.zeros([num_classes]))
     y = tf.nn.softmax(tf.matmul(x, W) + b)
     y_ = tf.placeholder(tf.float32, [None, num_classes])
-    cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
+    cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
     train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
     init = tf.initialize_all_variables()
     sess = tf.Session()
@@ -35,10 +37,12 @@ def train_and_test(datapath, num_train_steps, samples_per_step, num_test_samples
 
     # in each training step, ...
     for step in range(num_train_steps):
+        print 'step: ' + str(step)
         batch_samples = []
         batch_labels = []
         # each class is set up with its label and correct number of training samples, and...
         for class_no in range(num_classes):
+            print 'class: ' + str(class_no)
             class_label = [0] * num_classes
             class_label[class_no] = 1
             classname = classnames[class_no]
@@ -47,9 +51,9 @@ def train_and_test(datapath, num_train_steps, samples_per_step, num_test_samples
             numpy.random.shuffle(indices)
             # a random sample is selected and added to the array of samples in the batch
             for sample in range(samples_per_step):
-                spectro_file = training_dir + classname + '/' + str(sample) + '.png'
-                spectro_flat = flatten_image(spectro_file)
-                batch_samples.append(spectro_flat)
+                im = training_dir + classname + '/' + str(indices[sample]) + '.png'
+                flat = flatten_image(im)
+                batch_samples.append(flat)
                 batch_labels.append(class_label)
 
         sess.run(train_step, feed_dict={x: batch_samples, y_: batch_labels})
@@ -57,14 +61,16 @@ def train_and_test(datapath, num_train_steps, samples_per_step, num_test_samples
     # test accuracy of the model once trained
     correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    # training_data, training_labels = get_test_data(datapath, classnames, num_test_samples)
+    testing_data, testing_labels = get_test_data(datapath, classnames, num_test_samples)
+    print 'testing data loaded'
+    print(sess.run(accuracy, feed_dict={x: testing_data, y_: testing_labels}))
 
 
 def get_data_info(datapath):
     classnames = os.walk(datapath).next()[1]
     first_classname = classnames[0]
     spectro_width, spectro_height = Image.open(datapath + first_classname + '/' + '0.png').size
-    # verify that spectrograms are (probably) the same size
+    # verify that spectrograms are (probably) all the same size
     for classname in classnames:
         print datapath + classname
         num_items = len(glob(datapath + classname + '/*.png'))
@@ -81,8 +87,21 @@ def get_test_data(datapath, classnames, num_test_samples):
     testing_dir = datapath + 'testing/'
     testing_data = []
     testing_labels = []
-    #for clas in classnames:
-        #do stuff
+    for class_no in range(len(classnames)):
+        class_label = [0] * len(classnames)
+        class_label[class_no] = 1
+        # randomize test samples chosen
+        indices = numpy.arange(num_test_samples)
+        numpy.random.shuffle(indices)
+        class_dir = testing_dir + classnames[class_no] + '/'
+        total_test_samples = len(glob(class_dir + '*.png'))
+        samples_to_get = num_test_samples if (num_test_samples < total_test_samples) else total_test_samples
+        for sample in range(samples_to_get):
+            im = class_dir + str(indices[sample]) + '.png'
+            flat = flatten_image(im)
+            testing_data.append(flat)
+            testing_labels.append(class_label)
+    return testing_data, testing_labels
 
 
 def flatten_image(filepath):
@@ -105,6 +124,4 @@ if __name__ == "__main__":
     samples_per_step = sys.argv[3]
     num_test_samples = sys.argv[4]
     train_and_test(train_path, int(num_train_steps), int(samples_per_step), int(num_test_samples))
-    #test_path = sys.argv[1] + "testing/"
-    #test(test_path)
 

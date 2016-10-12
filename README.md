@@ -59,4 +59,21 @@ The directory passed to my train function contains two subdirectories: *training
 *October 7, 2016*
 * Started on standardizing file structure and reflecting that in the code.
 
+*October 8-10, 2016*
+* Code/file restructuring...
+
+*October 11, 2016*
+* Ran some tests:
+ * __1__
+  * 100 samples per class * 100 training loops = 10,000 randomly selected samples from each class.
+  * tested with 20 samples, yeilded a 70% success rate.
+ * __2__
+  * 100 samples per class * 100 training loops = 10,000 randomly selected samples from each class.
+  * test with 200 samples caused a crash with message `Killed: 9`
+ * __3__
+  * 50 samples per class * 100 training loops = 2500 randomly selected samples from each class.
+  * tested with 200 samples, yeilded a 66.75 % success rate.
+ * __4__ (same parameters as 3)
+  * 50 samples per class * 100 training loops = 2500 randomly selected samples from each class.
+  * tested with 200 samples, yeilded a 68.25 % success rate.
 
