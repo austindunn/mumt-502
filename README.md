@@ -77,3 +77,10 @@ The directory passed to my train function contains two subdirectories: *training
   * 50 samples per class * 100 training loops = 2500 randomly selected samples from each class.
   * tested with 200 samples, yeilded a 68.25 % success rate.
 
+*October 12, 2016*
+* Did some research on ways to improve the scores I'm getting.
+* Ran a test overnight:
+ * 1000 train loops with 50 samples per class per loop.
+ * Tested with 200 samples, with a 66.25% accuracy rate.
+ * This was the test with the most training loops, yet it yeilded the lowest accuracy of all the tests run so far.
+
