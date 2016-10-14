@@ -83,8 +83,14 @@ The directory passed to my train function contains two subdirectories: *training
  * 1000 train loops with 50 samples per class per loop.
  * Tested with 200 samples, with a 66.25% accuracy rate.
  * This was the test with the most training loops, yet it yeilded the lowest accuracy of all the tests run so far.
+
+*October 13, 2016*
 * Ran a test during the day:
  * 1000 training loops with 100 samples per class per loop, tested with 200 samples yeilded 0.5 accuracy. Very strange. So much for those 13 hours of training.
 * Since the training with fewer samples has so far yeilded better results, I'm going to run another test with 100 samples * 100 training loops, tested with 200 samples.
  * This overnight tested yeilded accuracy of .68.
 
+*October 14, 2016*
+* Ran another test this morning, with 100 samples per class per loop, 100 training loops, and 200 test samples.
+ * Accuracy: .6925.
+ * Seems that lots of samples and a low number of training loops leads to best results. So far, the test above (100 samples per class * 100 training loops) has yeilded the best results. Tonight I'll run another test with more training loops just to see if yesterday's test was a fluke.
