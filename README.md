@@ -69,7 +69,7 @@ The directory passed to my train function contains two subdirectories: *training
   * tested with 20 samples, yeilded a 70% success rate.
  * __2__
   * 100 samples per class * 100 training loops = 10,000 randomly selected samples from each class.
-  * test with 200 samples caused a crash with message `Killed: 9`
+  * test with 2000 samples caused a crash with message `Killed: 9`
  * __3__
   * 50 samples per class * 100 training loops = 2500 randomly selected samples from each class.
   * tested with 200 samples, yeilded a 66.75 % success rate.
@@ -83,4 +83,7 @@ The directory passed to my train function contains two subdirectories: *training
  * 1000 train loops with 50 samples per class per loop.
  * Tested with 200 samples, with a 66.25% accuracy rate.
  * This was the test with the most training loops, yet it yeilded the lowest accuracy of all the tests run so far.
+* Ran a test during the day:
+ * 1000 training loops with 100 samples per class per loop, tested with 200 samples yeilded 0.5 accuracy. Very strange. So much for those 13 hours of training.
+* Since the training with fewer samples has so far yeilded better results, I'm going to run another test with 100 samples * 100 training loops, tested with 200 samples.
 
