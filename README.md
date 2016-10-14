@@ -86,4 +86,5 @@ The directory passed to my train function contains two subdirectories: *training
 * Ran a test during the day:
  * 1000 training loops with 100 samples per class per loop, tested with 200 samples yeilded 0.5 accuracy. Very strange. So much for those 13 hours of training.
 * Since the training with fewer samples has so far yeilded better results, I'm going to run another test with 100 samples * 100 training loops, tested with 200 samples.
+ * This overnight tested yeilded accuracy of .68.
 
