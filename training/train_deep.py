@@ -37,14 +37,20 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
     sess = tf.Session()
     sess.run(init)
 
+    # additional tensors, convolutions and pooling according to TF Deep MNIST Tutorial
+    # Note: inputs assumed to be PNGs with 4 values per pixel
+    W_conv1 = weight_variable([5, 5, 4, 32])
+    b_conv1 = bias_variable([32])
+x_image = tf.reshape(x, [-1,28,28,1])
+
     # in each training step, ...
     for step in range(train_loops):
-        print 'Step: ' + str(step+1)
+        print 'Step: ' + str(step)
         batch_samples = []
         batch_labels = []
         # each class is set up with its label and correct number of training samples, and...
         for class_no in range(num_classes):
-            print 'class: ' + str(class_no+1)
+            print 'class: ' + str(class_no)
             class_label = [0] * num_classes
             class_label[class_no] = 1
             classname = classnames[class_no]
@@ -67,7 +73,7 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
     for test in range(test_loops):
         testing_data, testing_labels = get_test_data(datapath, classnames, test_samples)
         success_rate = sess.run(accuracy, feed_dict={x: testing_data, y_: testing_labels})
-        print 'Test number: ' + str(test+1) + '. Success rate: ' + str(success_rate*100) + '%'
+        print 'Test number: ' + str(test) + '. Success rate: ' + str(success_rate*100) + '%'
         accuracies.append(success_rate)
     avg = numpy.mean(accuracies)
     print 'This model tested with an average success rate of ' + str(avg*100) + '%'
@@ -101,6 +107,7 @@ def get_test_data(datapath, classnames, test_samples):
         # randomize test samples chosen
         indices = numpy.arange(len(glob(testing_dir + classnames[class_no] + '/*.png')))
         numpy.random.shuffle(indices)
+        print indices[0:10]
         class_dir = testing_dir + classnames[class_no] + '/'
         total_test_samples = len(glob(class_dir + '*.png'))
         samples_to_get = test_samples if (test_samples < total_test_samples) else total_test_samples
