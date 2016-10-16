@@ -99,5 +99,5 @@ The directory passed to my train function contains two subdirectories: *training
 * Day test: 50 samples per class x 50 training loops, tested with 20 test loops x 100 samples per class per test loop.
  * Yeilded a low score of 52.05%
 * Night test: 100 samples per class x 50 training loops, tested with 20 test loops x 200 samples per class per test loop.
- * Yeilded a better score of 51.15%
+ * Yeilded a better score of 59.15%
 
