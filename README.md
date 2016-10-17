@@ -106,4 +106,7 @@ The directory passed to my train function contains two subdirectories: *training
 * Running a test tonight with 50 training loops, 200 samples per class per loop, tested with 20 test loops, each with 200 samples per class... 
  * 64.96% success rate.
 
-
+*October 17, 2016*
+* Day test: 20 training loops, 300 samples per class per loop, tested with 20 test loops of 200 samples per class per loop.
+ * 64.66%
+ * In this test, I was looking to find some difference in running fewer loops, but using an especially large number of samples per loop.
