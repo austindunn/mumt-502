@@ -25,7 +25,7 @@ where
 def train_and_test(datapath, train_loops, train_samples, test_loops, test_samples):
     # set up our model
     training_dir = datapath + "training/"
-    tensor_size, classnames, num_classes = get_data_info(training_dir)
+    width, height, tensor_size, classnames, num_classes = get_data_info(training_dir)
     x = tf.placeholder(tf.float32, [None, tensor_size])
     W = tf.Variable(tf.zeros([tensor_size, num_classes]))
     b = tf.Variable(tf.zeros([num_classes]))
@@ -38,10 +38,20 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
     sess.run(init)
 
     # additional tensors, convolutions and pooling according to TF Deep MNIST Tutorial
-    # Note: inputs assumed to be PNGs with 4 values per pixel
-    W_conv1 = weight_variable([5, 5, 4, 32])
-    b_conv1 = bias_variable([32])
-x_image = tf.reshape(x, [-1,28,28,1])
+    # Note: inputs assumed to be PNGs with 4 values per pixel -- values adjusted
+    #   accordingly from TF Deep MNIST Tutorial
+    # first convolution/pooling layer
+    W_conv1 = weight_variable([5, 5, 4, 128])
+    b_conv1 = bias_variable([128])
+    x_image = tf.reshape(x, [-1, width, height, 4])
+    h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
+    h_pool1 = max_pool_2x2(h_conv1)
+    # second convolution/pooling layer
+    W_conv2 = weight_variable([5, 5, 128, 256])
+    b_conv2 = bias_variable([256])
+    h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
+    h_pool2 = max_pool_2x2(h_conv2)
+
 
     # in each training step, ...
     for step in range(train_loops):
@@ -82,18 +92,18 @@ x_image = tf.reshape(x, [-1,28,28,1])
 def get_data_info(datapath):
     classnames = os.walk(datapath).next()[1]
     first_classname = classnames[0]
-    spectro_width, spectro_height = Image.open(datapath + first_classname + '/' + '0.png').size
+    width, height = Image.open(datapath + first_classname + '/' + '0.png').size
     # verify that spectrograms are (probably) all the same size
     for classname in classnames:
         print datapath + classname
         num_items = len(glob(datapath + classname + '/*.png'))
         rand_item = random.randrange(0, num_items)
-        width, height = Image.open(datapath + classname + '/' + str(rand_item) + ".png").size
-        assert (width == spectro_width and height == spectro_height), "Image size error: Found two spectrograms with differing dimensions"
+        crt_width, crt_height = Image.open(datapath + classname + '/' + str(rand_item) + ".png").size
+        assert (crt_width == width and crt_height == height), "Image size error: Found two spectrograms with differing dimensions"
     # 4 values per pixel (red, green, blue, opacity)
-    tensor_size = 4 * spectro_width * spectro_height
+    tensor_size = 4 * width * height
     num_classes = len(classnames)
-    return tensor_size, classnames, num_classes
+    return width, height, tensor_size, classnames, num_classes
 
 
 def get_test_data(datapath, classnames, test_samples):

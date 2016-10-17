@@ -101,3 +101,9 @@ The directory passed to my train function contains two subdirectories: *training
 * Night test: 100 samples per class x 50 training loops, tested with 20 test loops x 200 samples per class per test loop.
  * Yeilded a better score of 59.15%
 
+*October 16, 2016*
+* Found a bunch of ways to fix my data to make it smaller (and therefore faster and less demanding in terms of memory), mostly sticking to tricks I can do with PIL (Python's imaging library). These fixes will also help my data to conform with what TensorFlow does in the Deep MNIST Tutorial, which I'm following for building my deeper model.
+* Running a test tonight with 50 training loops, 200 samples per class per loop, tested with 20 test loops, each with 200 samples per class... 
+ * 64.96% success rate.
+
+
