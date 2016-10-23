@@ -110,3 +110,13 @@ The directory passed to my train function contains two subdirectories: *training
 * Day test: 20 training loops, 300 samples per class per loop, tested with 20 test loops of 200 samples per class per loop.
  * 64.66%
  * In this test, I was looking to find some difference in running fewer loops, but using an especially large number of samples per loop.
+* Tonight, I'll run a much longer test, hopefully to get it to run through the day tomorrow so I can see the results after work. For this test, I'll do 150 training loops with 250 samlpes per class each, and test with 40 test loops of 200 samples per class each.
+
+*October 21, 2016*
+* Ran a dummy test with mislabelled data, got a success rate of 41.12% (and results of each test loop all over the place, from 20% to 70%). So at least we know that my model is training correctly, if results tend to be both higher and more consistent across test loops.
+
+*October 22, 2016*
+* Finalized a script that filters samples by lower amplitude, spent the evening/night generating samples. This script also creates spectrograms with much lower resolution, I'm expecting a speed increase as result.
+
+*October 23, 2016*
+* Ran an initial test on new data - using just the old script, with 100 training loops of 100 samples per class each, already the results show roughly a 15% increase in accuracy, with an average accuracy (across 20 training loops of 200 samples per class each) of 80.18%.

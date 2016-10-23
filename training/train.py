@@ -23,8 +23,8 @@ where
 
 
 def train_and_test(datapath, train_loops, train_samples, test_loops, test_samples):
-    # set up our model
     training_dir = datapath + "training/"
+    # set up our model
     tensor_size, classnames, num_classes = get_data_info(training_dir)
     x = tf.placeholder(tf.float32, [None, tensor_size])
     W = tf.Variable(tf.zeros([tensor_size, num_classes]))
@@ -74,7 +74,7 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
 
 
 def get_data_info(datapath):
-    classnames = os.walk(datapath).next()[1]
+    classnames = [os.path.basename(clas) for clas in glob(datapath + '*')]
     first_classname = classnames[0]
     spectro_width, spectro_height = Image.open(datapath + first_classname + '/' + '0.png').size
     # verify that spectrograms are (probably) all the same size
