@@ -31,27 +31,42 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
     b = tf.Variable(tf.zeros([num_classes]))
     y = tf.nn.softmax(tf.matmul(x, W) + b)
     y_ = tf.placeholder(tf.float32, [None, num_classes])
-    cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
-    train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
-    init = tf.initialize_all_variables()
-    sess = tf.Session()
-    sess.run(init)
 
-    # additional tensors, convolutions and pooling according to TF Deep MNIST Tutorial
+    # Additional tensors, convolutions and pooling according to TF Deep MNIST Tutorial.
     # Note: inputs assumed to be PNGs with 4 values per pixel -- values adjusted
-    #   accordingly from TF Deep MNIST Tutorial
+    # accordingly from TF Deep MNIST Tutorial
+
     # first convolution/pooling layer
-    W_conv1 = weight_variable([5, 5, 4, 128])
-    b_conv1 = bias_variable([128])
+    W_conv1 = weight_variable([5, 5, 4, 32])
+    b_conv1 = bias_variable([32])
     x_image = tf.reshape(x, [-1, width, height, 4])
     h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
     h_pool1 = max_pool_2x2(h_conv1)
     # second convolution/pooling layer
-    W_conv2 = weight_variable([5, 5, 128, 256])
-    b_conv2 = bias_variable([256])
+    W_conv2 = weight_variable([5, 5, 32, 64])
+    b_conv2 = bias_variable([64])
     h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
     h_pool2 = max_pool_2x2(h_conv2)
+    # densley connected layer
+    W_fc1 = weight_variable([(width/4) * (height/4) * 64, 1024])
+    b_fc1 = bias_variable([1024])
+    h_pool2_flat = tf.reshape(h_pool2, [-1, (width/4) * (height/4) * 64])
+    h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+    # apply dropout
+    keep_prob = tf.placeholder(tf.float32)
+    h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+    # softmax readout layer
+    W_fc2 = weight_variable([1024, num_classes])
+    b_fc2 = bias_variable([num_classes])
+    y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
 
+    cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
+    train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+    correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    init = tf.initialize_all_variables()
+    sess = tf.Session()
+    sess.run(init)
 
     # in each training step, ...
     for step in range(train_loops):
@@ -77,8 +92,6 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
         sess.run(train_step, feed_dict={x: batch_samples, y_: batch_labels})
 
     # test accuracy of the model once trained
-    correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     accuracies = []
     for test in range(test_loops):
         testing_data, testing_labels = get_test_data(datapath, classnames, test_samples)

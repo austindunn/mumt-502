@@ -120,3 +120,4 @@ The directory passed to my train function contains two subdirectories: *training
 
 *October 23, 2016*
 * Ran an initial test on new data - using just the old script, with 100 training loops of 100 samples per class each, already the results show roughly a 15% increase in accuracy, with an average accuracy (across 20 training loops of 200 samples per class each) of 80.18%.
+* Overnight test (still using simple single-layer model) with 2000 training loops of 200 samples per class each yeilded an average accuracy of 93.14%! This actually beats the accuracy of TensorFlow's MNIST Beginner tutorial. Of course, my problem is only 2 classes instead of 10, but that's still pretty cool. Hoping to test out the deeper model I've been working on sometime in the next day or so.
