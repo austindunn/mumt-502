@@ -37,9 +37,9 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
     # accordingly from TF Deep MNIST Tutorial
 
     # first convolution/pooling layer
+    x_image = tf.reshape(x, [-1, width, height, 4])
     W_conv1 = weight_variable([5, 5, 4, 32])
     b_conv1 = bias_variable([32])
-    x_image = tf.reshape(x, [-1, width, height, 4])
     h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
     h_pool1 = max_pool_2x2(h_conv1)
     # second convolution/pooling layer
@@ -61,7 +61,7 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
     y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
 
     cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
-    train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+    train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
     correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     init = tf.initialize_all_variables()
@@ -70,12 +70,10 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
 
     # in each training step, ...
     for step in range(train_loops):
-        print 'Step: ' + str(step)
         batch_samples = []
         batch_labels = []
         # each class is set up with its label and correct number of training samples, and...
         for class_no in range(num_classes):
-            print 'class: ' + str(class_no)
             class_label = [0] * num_classes
             class_label[class_no] = 1
             classname = classnames[class_no]
@@ -88,15 +86,19 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
                 flat = flatten_image(im)
                 batch_samples.append(flat)
                 batch_labels.append(class_label)
-
-        sess.run(train_step, feed_dict={x: batch_samples, y_: batch_labels})
+        if (step % 50 == 0):
+            train_accuracy = sess.run(accuracy, feed_dict={x:batch_samples, y_: batch_labels, keep_prob: 1.0})
+            print 'Step: ' + str(step+1) + ', training accuracy: ' + str(train_accuracy)
+        else:
+            print 'Step: ' + str(step+1)
+        sess.run(train_step, feed_dict={x: batch_samples, y_: batch_labels, keep_prob: 0.5})
 
     # test accuracy of the model once trained
     accuracies = []
     for test in range(test_loops):
         testing_data, testing_labels = get_test_data(datapath, classnames, test_samples)
-        success_rate = sess.run(accuracy, feed_dict={x: testing_data, y_: testing_labels})
-        print 'Test number: ' + str(test) + '. Success rate: ' + str(success_rate*100) + '%'
+        success_rate = sess.run(accuracy, feed_dict={x: testing_data, y_: testing_labels, keep_prob: 1.0})
+        print 'Test number: ' + str(test+1) + '. Success rate: ' + str(success_rate*100) + '%'
         accuracies.append(success_rate)
     avg = numpy.mean(accuracies)
     print 'This model tested with an average success rate of ' + str(avg*100) + '%'
@@ -108,7 +110,6 @@ def get_data_info(datapath):
     width, height = Image.open(datapath + first_classname + '/' + '0.png').size
     # verify that spectrograms are (probably) all the same size
     for classname in classnames:
-        print datapath + classname
         num_items = len(glob(datapath + classname + '/*.png'))
         rand_item = random.randrange(0, num_items)
         crt_width, crt_height = Image.open(datapath + classname + '/' + str(rand_item) + ".png").size
@@ -130,7 +131,6 @@ def get_test_data(datapath, classnames, test_samples):
         # randomize test samples chosen
         indices = numpy.arange(len(glob(testing_dir + classnames[class_no] + '/*.png')))
         numpy.random.shuffle(indices)
-        print indices[0:10]
         class_dir = testing_dir + classnames[class_no] + '/'
         total_test_samples = len(glob(class_dir + '*.png'))
         samples_to_get = test_samples if (test_samples < total_test_samples) else total_test_samples
