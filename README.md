@@ -124,3 +124,4 @@ The directory passed to my train function contains two subdirectories: *training
 
 *October 25, 2016*
 * I finished the 'deeper' version of my model, which now features 2 hidden layers. On an initial test, I used 100 training loops of 100 samples per class each, and tested with 20test loops of 200 samples per class each, and the average accuracy was 91.75%. This is a slightly lower score than my best training session with the simpler model, with the notable difference that the simpler model took 8 hours to reach its result, whereas the deeper model took about 10 minutes. Very excited for the overnight test tonight.
+* Overnight test with 1000 training loops with 500 samples per class each tested with an average success rate of 94.25%.
