@@ -22,7 +22,8 @@ where
 """
 
 
-def train_and_test(datapath, train_loops, train_samples, test_loops, test_samples):
+def train_and_test(datapath, train_loops, train_samples, test_loops, test_samples, num_layers):
+
     # set up our model
     training_dir = datapath + "training/"
     width, height, tensor_size, classnames, num_classes = get_data_info(training_dir)
@@ -36,27 +37,39 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
     # Note: inputs assumed to be PNGs with 4 values per pixel -- values adjusted
     # accordingly from TF Deep MNIST Tutorial
 
-    # first convolution/pooling layer
     x_image = tf.reshape(x, [-1, width, height, 4])
-    W_conv1 = weight_variable([5, 5, 4, 32])
-    b_conv1 = bias_variable([32])
-    h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
-    h_pool1 = max_pool_2x2(h_conv1)
-    # second convolution/pooling layer
-    W_conv2 = weight_variable([5, 5, 32, 64])
-    b_conv2 = bias_variable([64])
-    h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
-    h_pool2 = max_pool_2x2(h_conv2)
+    print "x_image shape: " + str(x_image.get_shape())
+    layers = []
+    patch_size = 5
+    num_inputs = 4
+    num_features = 32
+    # first layer
+    crt_layer = create_conv_layer(patch_size, num_inputs, num_features, x_image)
+    layers.append(crt_layer)
+
+    # loop to create convolution/pooling layers
+    for lyr in range(num_layers-1):
+        num_inputs = num_features           # inputs will be # outputs of previous layer
+        num_features = num_features * 2     # doubling features calculated is consistent with TF Deep MNIST tutorial conventions
+        print "layer: " + str(lyr+2)
+        print "num_inputs: " + str(num_inputs)
+        print "num_features: " + str(num_features)
+        crt_layer = create_conv_layer(patch_size, num_inputs, num_features, layers[lyr])
+        layers.append(crt_layer)
+
+    dim_reduce_factor = 2 ** num_layers
+    print "output features: " + str(256*dim_reduce_factor)
+    print "length of layers list: " + str(len(layers))
     # densley connected layer
-    W_fc1 = weight_variable([(width/4) * (height/4) * 64, 1024])
-    b_fc1 = bias_variable([1024])
-    h_pool2_flat = tf.reshape(h_pool2, [-1, (width/4) * (height/4) * 64])
-    h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+    W_fc1 = weight_variable([(width/dim_reduce_factor) * (height/dim_reduce_factor) * num_features, 256 * dim_reduce_factor])
+    b_fc1 = bias_variable([256 * dim_reduce_factor])
+    last_layer_flat = tf.reshape(layers[-1], [-1, (width/dim_reduce_factor) * (height/dim_reduce_factor) * num_features])
+    h_fc1 = tf.nn.relu(tf.matmul(last_layer_flat, W_fc1) + b_fc1)
     # apply dropout
     keep_prob = tf.placeholder(tf.float32)
     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
     # softmax readout layer
-    W_fc2 = weight_variable([1024, num_classes])
+    W_fc2 = weight_variable([256 * dim_reduce_factor, num_classes])
     b_fc2 = bias_variable([num_classes])
     y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
 
@@ -86,9 +99,11 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
                 flat = flatten_image(im)
                 batch_samples.append(flat)
                 batch_labels.append(class_label)
+        train_accuracy = sess.run(accuracy, feed_dict={x:batch_samples, y_: batch_labels, keep_prob: 1.0})
         if (step % 50 == 0):
-            train_accuracy = sess.run(accuracy, feed_dict={x:batch_samples, y_: batch_labels, keep_prob: 1.0})
+            # train_accuracy = sess.run(accuracy, feed_dict={x:batch_samples, y_: batch_labels, keep_prob: 1.0})
             print 'Step: ' + str(step+1) + ', training accuracy: ' + str(train_accuracy)
+        #print 'Step: ' + str(step+1) + ', training accuracy: ' + str(train_accuracy)
         else:
             print 'Step: ' + str(step+1)
         sess.run(train_step, feed_dict={x: batch_samples, y_: batch_labels, keep_prob: 0.5})
@@ -171,6 +186,15 @@ def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 
+def create_conv_layer(patch_size, num_channels, num_outputs, input_tensor):
+    print input_tensor.get_shape()
+    W = weight_variable([patch_size, patch_size, num_channels, num_outputs])
+    b = bias_variable([num_outputs])
+    h_conv = tf.nn.relu(conv2d(input_tensor, W) + b)
+    h_pool = max_pool_2x2(h_conv)
+    return h_pool
+
+
 if __name__ == "__main__":
     # make sure correct number of arguments
     if len(sys.argv) < 5:
@@ -181,5 +205,6 @@ if __name__ == "__main__":
     train_samples = sys.argv[3]
     test_loops = sys.argv[4]
     test_samples = sys.argv[5]
-    train_and_test(train_path, int(train_loops), int(train_samples), int(test_loops), int(test_samples))
+    num_layers = sys.argv[6]
+    train_and_test(train_path, int(train_loops), int(train_samples), int(test_loops), int(test_samples), int(num_layers))
 
