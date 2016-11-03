@@ -86,11 +86,11 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
                 flat = flatten_image(im)
                 batch_samples.append(flat)
                 batch_labels.append(class_label)
-        if (step % 50 == 0):
-            train_accuracy = sess.run(accuracy, feed_dict={x:batch_samples, y_: batch_labels, keep_prob: 1.0})
-            print 'Step: ' + str(step+1) + ', training accuracy: ' + str(train_accuracy)
-        else:
-            print 'Step: ' + str(step+1)
+        #if (step % 50 == 0):
+        train_accuracy = sess.run(accuracy, feed_dict={x:batch_samples, y_: batch_labels, keep_prob: 1.0})
+        print 'Step: ' + str(step+1) + ', training accuracy: ' + str(train_accuracy)
+        #else:
+        #    print 'Step: ' + str(step+1)
         sess.run(train_step, feed_dict={x: batch_samples, y_: batch_labels, keep_prob: 0.5})
 
     # test accuracy of the model once trained
