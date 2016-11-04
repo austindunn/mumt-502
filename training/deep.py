@@ -38,7 +38,6 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
     # accordingly from TF Deep MNIST Tutorial
 
     x_image = tf.reshape(x, [-1, width, height, 4])
-    print "x_image shape: " + str(x_image.get_shape())
     layers = []
     patch_size = 5
     num_inputs = 4
@@ -51,9 +50,6 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
     for lyr in range(num_layers-1):
         num_inputs = num_features           # inputs will be # outputs of previous layer
         num_features = num_features * 2     # doubling features calculated is consistent with TF Deep MNIST tutorial conventions
-        print "layer: " + str(lyr+2)
-        print "num_inputs: " + str(num_inputs)
-        print "num_features: " + str(num_features)
         crt_layer = create_conv_layer(patch_size, num_inputs, num_features, layers[lyr])
         layers.append(crt_layer)
 
@@ -100,12 +96,7 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
                 batch_samples.append(flat)
                 batch_labels.append(class_label)
         train_accuracy = sess.run(accuracy, feed_dict={x:batch_samples, y_: batch_labels, keep_prob: 1.0})
-        if (step % 50 == 0):
-            # train_accuracy = sess.run(accuracy, feed_dict={x:batch_samples, y_: batch_labels, keep_prob: 1.0})
-            print 'Step: ' + str(step+1) + ', training accuracy: ' + str(train_accuracy)
-        #print 'Step: ' + str(step+1) + ', training accuracy: ' + str(train_accuracy)
-        else:
-            print 'Step: ' + str(step+1)
+        print 'Step: ' + str(step+1) + ', training accuracy: ' + str(train_accuracy)
         sess.run(train_step, feed_dict={x: batch_samples, y_: batch_labels, keep_prob: 0.5})
 
     # test accuracy of the model once trained
@@ -187,7 +178,6 @@ def max_pool_2x2(x):
 
 
 def create_conv_layer(patch_size, num_channels, num_outputs, input_tensor):
-    print input_tensor.get_shape()
     W = weight_variable([patch_size, patch_size, num_channels, num_outputs])
     b = bias_variable([num_outputs])
     h_conv = tf.nn.relu(conv2d(input_tensor, W) + b)
