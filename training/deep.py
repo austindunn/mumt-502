@@ -10,7 +10,7 @@ from PIL import Image
 This script contains methods for training and testing a tensorflow model
 using spectrogram data as input.
 
-Usage: python train.py [filepath] [train loops] [train samples] [test loops] [test samples]
+Usage: python train.py [filepath] [train loops] [train samples] [test loops] [test samples] [layers]
 where 
 [filepath] is the location of the data
 [train loops] is the number of times to run the training loop
@@ -19,6 +19,7 @@ where
 [test loops] is the number of times to run the test loop
 [test samples] is the number of samples of each class to be fed to
     the model every iteration of the testing loop
+[layers] is the number of layers that the model should use (i.e. depth)
 """
 
 
