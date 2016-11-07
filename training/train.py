@@ -33,18 +33,18 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
     y_ = tf.placeholder(tf.float32, [None, num_classes])
     cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
     train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+    correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     init = tf.initialize_all_variables()
     sess = tf.Session()
     sess.run(init)
 
     # in each training step, ...
     for step in range(train_loops):
-        print 'Step: ' + str(step+1)
         batch_samples = []
         batch_labels = []
         # each class is set up with its label and correct number of training samples, and...
         for class_no in range(num_classes):
-            print 'class: ' + str(class_no+1)
             class_label = [0] * num_classes
             class_label[class_no] = 1
             classname = classnames[class_no]
@@ -57,12 +57,11 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
                 flat = flatten_image(im)
                 batch_samples.append(flat)
                 batch_labels.append(class_label)
-
+        train_accuracy = sess.run(accuracy, feed_dict={x:batch_samples, y_: batch_labels})
+        print 'Step: ' + str(step+1) + ', training accuracy: ' + str(train_accuracy)
         sess.run(train_step, feed_dict={x: batch_samples, y_: batch_labels})
 
     # test accuracy of the model once trained
-    correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     accuracies = []
     for test in range(test_loops):
         testing_data, testing_labels = get_test_data(datapath, classnames, test_samples)
