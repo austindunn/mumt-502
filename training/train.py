@@ -5,12 +5,13 @@ import sys
 import random
 from glob import glob
 from PIL import Image
+from ConfigParser import ConfigParser
 
 """
 This script contains methods for training and testing a tensorflow model
 using spectrogram data as input.
 
-Usage: python train.py [filepath] [train loops] [train samples] [test loops] [test samples]
+Usage: python train.py [filepath] [train loops] [train samples] [test loops] [test samples] [savepath]
 where 
 [filepath] is the location of the data
 [train loops] is the number of times to run the training loop
@@ -19,10 +20,12 @@ where
 [test loops] is the number of times to run the test loop
 [test samples] is the number of samples of each class to be fed to
     the model every iteration of the testing loop
+[savepath] is the path of the file to save the variables/tensors to,
+    if you want to save the model after trianing
 """
 
 
-def train_and_test(datapath, train_loops, train_samples, test_loops, test_samples):
+def train_test_save(datapath, train_loops, train_samples, test_loops, test_samples, save_path):
     training_dir = datapath + "training/"
     # set up our model
     tensor_size, classnames, num_classes = get_data_info(training_dir)
@@ -32,12 +35,16 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
     y = tf.nn.softmax(tf.matmul(x, W) + b)
     y_ = tf.placeholder(tf.float32, [None, num_classes])
     cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
-    train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+    train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
     correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     init = tf.initialize_all_variables()
+    saver = tf.train.Saver()
     sess = tf.Session()
     sess.run(init)
+
+    # apply dropout
+    keep_prob = tf.placeholder(tf.float32)
 
     # in each training step, ...
     for step in range(train_loops):
@@ -57,19 +64,23 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
                 flat = flatten_image(im)
                 batch_samples.append(flat)
                 batch_labels.append(class_label)
-        train_accuracy = sess.run(accuracy, feed_dict={x:batch_samples, y_: batch_labels})
+        train_accuracy = sess.run(accuracy, feed_dict={x:batch_samples, y_: batch_labels, keep_prob: 1.0})
         print 'Step: ' + str(step+1) + ', training accuracy: ' + str(train_accuracy)
-        sess.run(train_step, feed_dict={x: batch_samples, y_: batch_labels})
+        sess.run(train_step, feed_dict={x: batch_samples, y_: batch_labels, keep_prob: 0.5})
 
     # test accuracy of the model once trained
     accuracies = []
     for test in range(test_loops):
         testing_data, testing_labels = get_test_data(datapath, classnames, test_samples)
-        success_rate = sess.run(accuracy, feed_dict={x: testing_data, y_: testing_labels})
+        success_rate = sess.run(accuracy, feed_dict={x: testing_data, y_: testing_labels, keep_prob: 1.0})
         print 'Test number: ' + str(test+1) + '. Success rate: ' + str(success_rate*100) + '%'
         accuracies.append(success_rate)
     avg = numpy.mean(accuracies)
     print 'This model tested with an average success rate of ' + str(avg*100) + '%'
+
+    if (save_path != None):
+        make_config_file(save_path, tensor_size, num_classes, classnames)
+        saver.save(sess, save_path)
 
 
 def get_data_info(datapath):
@@ -140,9 +151,27 @@ def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 
+def make_config_file(path, tensor_size, num_classes, classnames):
+    config = ConfigParser()
+    cfg_file = open(path + '-config.ini', 'w+')
+    config.add_section('Sizes')
+    config.set('Sizes', 'tensor_size', tensor_size)
+    config.set('Sizes', 'num_classes', num_classes)
+    config.add_section('Classnames')
+    class_string = ''
+    for classname in classnames:
+        class_string = class_string + classname
+        if classname == classnames[-1]:
+            config.set('Classnames', 'classnames', class_string)
+            break
+        class_string = class_string + ','
+    config.write(cfg_file)
+    cfg_file.close()
+
+
 if __name__ == "__main__":
     # make sure correct number of arguments
-    if len(sys.argv) < 5:
+    if len(sys.argv) < 6:
         print "Incorrect usage"
         exit()
     train_path = sys.argv[1]
@@ -150,5 +179,8 @@ if __name__ == "__main__":
     train_samples = sys.argv[3]
     test_loops = sys.argv[4]
     test_samples = sys.argv[5]
-    train_and_test(train_path, int(train_loops), int(train_samples), int(test_loops), int(test_samples))
+    if (len(sys.argv) > 6):
+        save_path = sys.argv[6]
+    else: save_path = None
+    train_test_save(train_path, int(train_loops), int(train_samples), int(test_loops), int(test_samples), save_path)
 

@@ -55,8 +55,6 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
         layers.append(crt_layer)
 
     dim_reduce_factor = 2 ** num_layers
-    print "output features: " + str(256*dim_reduce_factor)
-    print "length of layers list: " + str(len(layers))
     # densley connected layer
     W_fc1 = weight_variable([(width/dim_reduce_factor) * (height/dim_reduce_factor) * num_features, 256 * dim_reduce_factor])
     b_fc1 = bias_variable([256 * dim_reduce_factor])
@@ -70,16 +68,16 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
     b_fc2 = bias_variable([num_classes])
     y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
 
-    cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
+    cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y_conv, y_))
     train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
-    correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
+    correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    init = tf.initialize_all_variables()
     sess = tf.Session()
-    sess.run(init)
+    sess.run(tf.initialize_all_variables())
 
     # in each training step, ...
     for step in range(train_loops):
+        print "starting step " + str(step+1) + "..."
         batch_samples = []
         batch_labels = []
         # each class is set up with its label and correct number of training samples, and...
@@ -96,9 +94,10 @@ def train_and_test(datapath, train_loops, train_samples, test_loops, test_sample
                 flat = flatten_image(im)
                 batch_samples.append(flat)
                 batch_labels.append(class_label)
-        train_accuracy = sess.run(accuracy, feed_dict={x:batch_samples, y_: batch_labels, keep_prob: 1.0})
-        print 'Step: ' + str(step+1) + ', training accuracy: ' + str(train_accuracy)
-        sess.run(train_step, feed_dict={x: batch_samples, y_: batch_labels, keep_prob: 0.5})
+        if (step % 5 == 0 and step != 0):
+            train_accuracy = accuracy.eval(session=sess, feed_dict={x:batch_samples, y_: batch_labels, keep_prob: 1.0})
+            print 'Step: ' + str(step+1) + ', training accuracy: ' + str(train_accuracy)
+        train_step.run(session=sess, feed_dict={x: batch_samples, y_: batch_labels, keep_prob: 0.5})
 
     # test accuracy of the model once trained
     accuracies = []
