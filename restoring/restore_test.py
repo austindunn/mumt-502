@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy
 import os
 import sys
+from glob import glob
 from PIL import Image
 from ConfigParser import ConfigParser
 
@@ -12,48 +13,42 @@ This script is used to load previously trained TF models and allow them to
 Usage: TODO
 """
 
-def ask(model_path):
-    tensor_size, num_classes, label_dict = get_config_data(model_path)
-    W = tf.Variable(tf.zeros([tensor_size, num_classes]))
-    b = tf.Variable(tf.zeros([num_classes]))
+def ask(model_path, test_path, num_test_samples):
+    tensor_size, num_classes, classnames = get_config_data(model_path)
+    x = tf.placeholder(tf.float32, [None, tensor_size])
+    W = tf.Variable(tf.zeros([tensor_size, num_classes]), name="weights")
+    b = tf.Variable(tf.zeros([num_classes]), name="bias")
+    y = tf.nn.softmax(tf.matmul(x, W) + b)
+    prediction = tf.argmax(y,1)
     sess = tf.Session()
 
     saver = tf.train.Saver()
     saver.restore(sess, model_path)
 
-    x = tf.placeholder(tf.float32, [None, tensor_size])
-    y = tf.nn.softmax(tf.matmul(x, W) + b)
-    prediction = tf.argmax(y,1)
-
-    test_images = get_test_images()
-
-    predicted = prediction.eval(session=sess, feed_dict={x: test_images})
-    print predicted
-    # print label_dict[tuple(predicted)]
+    for class_no in range(len(classnames)):
+        print 'Looking at files for class: ' + classnames[class_no]
+        indices = numpy.arange(len(glob(test_path + classnames[class_no] + '/*.png')))
+        # numpy.random.shuffle(indices)
+        print indices
+        class_dir = test_path + classnames[class_no] + '/'
+        total_test_samples = len(glob(class_dir + '*.png'))
+        samples_to_get = num_test_samples if (num_test_samples < total_test_samples) else total_test_samples
+        # each sample in the class
+        for sample in range(samples_to_get):
+            im = class_dir + str(indices[sample]) + '.png'
+            flat = flatten_image(im)
+            predicted = prediction.eval(session=sess, feed_dict={x: [flat]})
+            print classnames[predicted[0]]
 
 
 def get_config_data(model_path):
     config = ConfigParser()
-    config.read(model_path + "-config.ini")
+    config.read(model_path + '-config.ini')
     tensor_size = int(config.get('Sizes', 'tensor_size'))
     num_classes = int(config.get('Sizes', 'num_classes'))
     classnames_str = config.get('Classnames', 'classnames')
     classnames = classnames_str.split(',')
-    label_dict = {}
-    for class_no in range(num_classes):
-        class_label = [0] * num_classes
-        class_label[class_no] = 1
-        classname = classnames[class_no]
-        label_dict[tuple(class_label)] = classname
-    return tensor_size, num_classes, label_dict
-
-
-def get_test_images():
-    samples = []
-    im = '/Users/austindunn/Code/mumt502/samples/clinton_v_trump_v2/testing/trump/2559.png'
-    flat = flatten_image(im)
-    samples.append(flat)
-    return samples
+    return tensor_size, num_classes, classnames
 
 
 def flatten_image(filepath):
@@ -71,4 +66,6 @@ if __name__ == "__main__":
         print "Incorrect usage, please see top of file."
         exit()
     model_path = sys.argv[1]
-    ask(model_path)
+    test_path = sys.argv[2]
+    num_test_samples = int(sys.argv[3])
+    ask(model_path, test_path, num_test_samples)

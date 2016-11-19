@@ -128,3 +128,12 @@ The directory passed to my train function contains two subdirectories: *training
 
 *November 13, 2016*
 * After playing with simple models (regular neural net, no hidden layers) and deeper models of varying depths, I found that a simple model with lots of data was highly efficient and suited the two-class problem well. Going forward, I'll be using a regular neural net to create and save models, which will then be used to classify data in a file frame-to-frame (my standard frame size remains 256 samples). I've now created such a model, and will be putting efforts into this next step of classifying audio frames sequentially.
+
+*November 18, 2016*
+* After fixing a problem that was happening due to examining a stereo instead of mono .wav file, I've managed to train and use a model (currently in new-model/new-model) that works quite nicely when used to examine a real file with the classifier.py file in sequential-reading/.
+* Some notes on this development:
+ * The model is *very* good at predicting whether it is Donald Trump speaking, not quite as reliable when examinging samples of Hillary Clinton's voice, though still pretty good
+  * May want to implement a testing function that tests a model for each class.
+ * Need to figure out an error-prone way to predict who's actually talking: one guess per 256-sample fram is not quite enough. I'll be looking into ways to get my model to look at data as a sequence instead of as independent and identically distributed.
+ * More classes: recognizing a moderator, detecting interruptions, detecting crowd noise. The model may need to be trained with samples from each of those classes.
+ * Speed is an issue when examining real data, as the spectrograms and image manipulations take some time.

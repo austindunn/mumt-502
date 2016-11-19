@@ -1,2 +1,2 @@
-model_checkpoint_path: "/Users/austindunn/Code/mumt502/saved_models/overnight-nov-12-2am"
-all_model_checkpoint_paths: "/Users/austindunn/Code/mumt502/saved_models/overnight-nov-12-2am"
+model_checkpoint_path: "/Users/austindunn/Code/mumt502/model/accurate-model.ckpt"
+all_model_checkpoint_paths: "/Users/austindunn/Code/mumt502/model/accurate-model.ckpt"

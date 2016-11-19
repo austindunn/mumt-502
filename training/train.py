@@ -30,12 +30,14 @@ def train_test_save(datapath, train_loops, train_samples, test_loops, test_sampl
     # set up our model
     tensor_size, classnames, num_classes = get_data_info(training_dir)
     x = tf.placeholder(tf.float32, [None, tensor_size])
-    W = tf.Variable(tf.zeros([tensor_size, num_classes]))
-    b = tf.Variable(tf.zeros([num_classes]))
+    W = tf.Variable(tf.zeros([tensor_size, num_classes]), name="weights")
+    b = tf.Variable(tf.zeros([num_classes]), name="bias")
     y = tf.nn.softmax(tf.matmul(x, W) + b)
     y_ = tf.placeholder(tf.float32, [None, num_classes])
     cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
     train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+    guess = tf.argmax(y,1)
+    right = tf.argmax(y_,1)
     correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     init = tf.initialize_all_variables()
@@ -72,6 +74,15 @@ def train_test_save(datapath, train_loops, train_samples, test_loops, test_sampl
     accuracies = []
     for test in range(test_loops):
         testing_data, testing_labels = get_test_data(datapath, classnames, test_samples)
+        # print testing_data, testing_labels
+        print "guess(class1):"
+        print guess.eval(session=sess, feed_dict={x: [testing_data[0]]})
+        print "correct(class1):"
+        print right.eval(session=sess, feed_dict={y_: [testing_labels[0]]})
+        print "guess (class2):"
+        print guess.eval(session=sess, feed_dict={x: [testing_data[1]]})
+        print "correct (class2):"
+        print right.eval(session=sess, feed_dict={y_: [testing_labels[1]]})
         success_rate = sess.run(accuracy, feed_dict={x: testing_data, y_: testing_labels, keep_prob: 1.0})
         print 'Test number: ' + str(test+1) + '. Success rate: ' + str(success_rate*100) + '%'
         accuracies.append(success_rate)
@@ -131,24 +142,6 @@ def flatten_image(filepath):
     flat = flat.astype(numpy.float32)
     flat = numpy.multiply(flat, 1.0 / 255.0)
     return flat
-
-
-def weight_variable(shape):
-    initial = tf.truncated_normal(shape, stddev=0.1)
-    return tf.Variable(initial)
-
-
-def bias_variable(shape):
-    initial = tf.constant(0.1, shape=shape)
-    return tf.Variable(initial)
-
-
-def conv2d(x, W):
-    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
-
-
-def max_pool_2x2(x):
-    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
 
 
 def make_config_file(path, tensor_size, num_classes, classnames):
