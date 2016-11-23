@@ -3,6 +3,8 @@ import pylab
 import numpy
 import sys
 import wave
+from scipy.stats import mode
+from collections import deque
 from PIL import Image, ImageChops
 from ConfigParser import ConfigParser
 
@@ -28,6 +30,9 @@ def read_and_predict(model_path, wav_path, frame_length):
     num_frames = wav.getnframes()
     sample_rate = wav.getframerate()
     num_windows = num_frames/frame_length
+
+    predictions = deque([], 20)
+
     print 'Starting classification... Examining ' + str(num_windows) + ' windows.'
     while (wav.tell() + frame_length) < num_frames:
         frames = wav.readframes(frame_length)
@@ -48,7 +53,12 @@ def read_and_predict(model_path, wav_path, frame_length):
         flat_spectro = flatten(spectro)
 
         predicted = prediction.eval(session=sess, feed_dict={x: flat_spectro})
-        print get_time_string(sample_rate, wav.tell()) + ' - ' + classnames[predicted[0]]
+        predictions.append(predicted[0])
+        m = mode(predictions)
+        print get_time_string(sample_rate, wav.tell())
+        print 'prediction: ' + classnames[predicted[0]]
+        print 'mode of prediction list: ' + classnames[m[0][0]]
+        print 'predictions list: ' + str(predictions)
 
 
 def get_config_data(model_path):

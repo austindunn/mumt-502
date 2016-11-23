@@ -75,14 +75,18 @@ def train_test_save(datapath, train_loops, train_samples, test_loops, test_sampl
     for test in range(test_loops):
         testing_data, testing_labels = get_test_data(datapath, classnames, test_samples)
         # print testing_data, testing_labels
-        print "guess(class1):"
+        print "guess (" + classnames[0] + "):"
         print guess.eval(session=sess, feed_dict={x: [testing_data[0]]})
-        print "correct(class1):"
+        print "correct ("+classnames[0]+"):"
         print right.eval(session=sess, feed_dict={y_: [testing_labels[0]]})
-        print "guess (class2):"
+        print "guess ("+classnames[1]+"):"
         print guess.eval(session=sess, feed_dict={x: [testing_data[1]]})
-        print "correct (class2):"
+        print "correct ("+classnames[1]+"):"
         print right.eval(session=sess, feed_dict={y_: [testing_labels[1]]})
+        print "guess ("+classnames[2]+"):"
+        print guess.eval(session=sess, feed_dict={x: [testing_data[2]]})
+        print "correct ("+classnames[2]+"):"
+        print right.eval(session=sess, feed_dict={y_: [testing_labels[2]]})
         success_rate = sess.run(accuracy, feed_dict={x: testing_data, y_: testing_labels, keep_prob: 1.0})
         print 'Test number: ' + str(test+1) + '. Success rate: ' + str(success_rate*100) + '%'
         accuracies.append(success_rate)

@@ -1,0 +1,2 @@
+model_checkpoint_path: "/Users/austindunn/Code/mumt502/three-class/three-class.ckpt"
+all_model_checkpoint_paths: "/Users/austindunn/Code/mumt502/three-class/three-class.ckpt"

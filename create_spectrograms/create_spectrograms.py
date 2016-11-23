@@ -21,56 +21,43 @@ from PIL import Image, ImageChops
 
 
 def create_spectrograms(directory, destination, frame_length, image_size, greyscale):
-    classnames = os.walk(directory).next()[1]
-    # silence is a special class, as its spectrograms come from wav files of other classes.
-    training_dest = destination + 'training/'
-    testing_dest = destination + 'testing/'
-    silence_count = 0
-    for classname in classnames:
-        print 'Now starting on class ' + classname + '.'
-        class_wav_dir = directory + classname + '/'
-        wavs = glob(class_wav_dir + '*.wav')
-        class_count = 0
-        total_count = 0
-        for wav_file in wavs:
-            wav = wave.open(wav_file, 'r')
-            num_frames = wav.getnframes()
-            sample_rate = wav.getframerate()
-            num_windows = num_frames/frame_length
-            print 'Creating spectrograms for file ' + wav_file + '... Examining ' + str(num_windows) + ' windows.'
-            while (wav.tell() + frame_length) < num_frames:
-                frames = wav.readframes(frame_length)
-                sound_info = pylab.fromstring(frames, 'Int16')
-                amps = numpy.absolute(sound_info)
-                # move silence to special class directory
-                # ambiguous (unsure if sound or silence) clips will be ignored
-                # split training:testing 7:1
-                if (amps.mean() > 100 and amps.mean() < 400):
-                    continue
-                elif (amps.mean() <= 100):
-                    filename = str(silence_count/7) if (silence_count % 7 == 0) else str(silence_count - (silence_count/7) - 1)
-                    full_destination = testing_dest + 'silence/' if (silence_count % 7 == 0) else training_dest + 'silence/'
-                    silence_count += 1
-                elif (amps.mean() >= 400):
-                    filename = str(class_count/7) if (class_count % 7 == 0) else str(class_count - (class_count/7) - 1)
-                    full_destination = testing_dest + classname + '/' if (class_count % 7 == 0) else training_dest + classname + '/'
-                    class_count += 1
-                # create, edit, and place the spectrogram image
-                pylab.figure(num=None, figsize=(19, 12))
-                pylab.axis('off')
-                pylab.specgram(sound_info, NFFT=frame_length, Fs=sample_rate)
-                pylab.savefig(filename + '.png')
-                pylab.close()
-                im = Image.open(filename + '.png')
-                im = customize(im, image_size, greyscale)
-                im.save(filename + '.png')
-                os.rename(filename + '.png', full_destination + filename + '.png') 
-                # logging
-                if ((total_count+1) % 100 == 0 and total_count > 0):
-                    print 'Created ' + str(total_count+1) + ' spectrograms so far. ' + str(wav.tell()/frame_length) + ' windows examined of file ' + wav_file + '.'
-                total_count += 1
-            wav.close()
-        print 'All finished with class ' + classname + '! ' + str(total_count) + ' spectrograms created.'
+    wavs = glob(directory + '*.wav')
+    count = 0
+    for wav_file in wavs:
+        wav = wave.open(wav_file, 'r')
+        num_frames = wav.getnframes()
+        sample_rate = wav.getframerate()
+        num_windows = num_frames/frame_length
+        print 'Creating spectrograms for file ' + wav_file + '... Examining ' + str(num_windows) + ' windows.'
+        while (wav.tell() + frame_length) < num_frames:
+            frames = wav.readframes(frame_length)
+            sound_info = pylab.fromstring(frames, 'Int16')
+            amps = numpy.absolute(sound_info)
+            # filter out windows with low amplitudes (i.e. no vocal information)
+            if (amps.mean() < 1000):
+                continue
+            # split training:testing 7:1
+            if (count > 1):
+                filename = str(count/7) if (count % 7 == 0) else str(count - (count/7) - 1)
+            else:
+                filename = '0'
+            full_dest = destination + 'testing/' if (count % 7 == 0) else destination + 'training/'
+            # create, edit, and place the spectrogram image
+            pylab.figure(num=None, figsize=(19, 12))
+            pylab.axis('off')
+            pylab.specgram(sound_info, NFFT=frame_length, Fs=sample_rate)
+            pylab.savefig(filename + '.png')
+            pylab.close()
+            im = Image.open(filename + '.png')
+            im = customize(im, image_size, greyscale)
+            im.save(filename + '.png')
+            os.rename(filename + '.png', full_dest + filename + '.png') 
+            # logging
+            if (count % 100 == 1 and count > 1):
+                print 'Created ' + str(count-1) + ' spectrograms so far. ' + str(wav.tell()/frame_length) + ' windows examined of file ' + wav_file + '.'
+            count += 1
+        wav.close()
+    print 'All finished! ' + str(count) + ' spectrograms created.'
 
 
 def customize(im, image_size, greyscale):
