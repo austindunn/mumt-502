@@ -137,3 +137,7 @@ The directory passed to my train function contains two subdirectories: *training
  * Need to figure out an error-prone way to predict who's actually talking: one guess per 256-sample fram is not quite enough. I'll be looking into ways to get my model to look at data as a sequence instead of as independent and identically distributed.
  * More classes: recognizing a moderator, detecting interruptions, detecting crowd noise. The model may need to be trained with samples from each of those classes.
  * Speed is an issue when examining real data, as the spectrograms and image manipulations take some time.
+
+*November 29, 2016*
+* fixed local minima error, fixed data so that lester is guessed accurately (problem was a stereo file being used to generate spectrograms, instead of mono).
+* updated restore\_test.py to generate a confusion matrix. Results on the current three-class model (stored in three-class/three-class.ckpt) show about 90% accuracy for Hillary and Trump each, around 85% for Lester).

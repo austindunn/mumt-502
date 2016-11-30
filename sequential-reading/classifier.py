@@ -31,6 +31,7 @@ def read_and_predict(model_path, wav_path, frame_length):
     sample_rate = wav.getframerate()
     num_windows = num_frames/frame_length
 
+    # deque (size 20) and mode used to smooth out prediction results
     predictions = deque([], 20)
 
     print 'Starting classification... Examining ' + str(num_windows) + ' windows.'
@@ -53,7 +54,7 @@ def read_and_predict(model_path, wav_path, frame_length):
         flat_spectro = flatten(spectro)
 
         predicted = prediction.eval(session=sess, feed_dict={x: flat_spectro})
-        predictions.append(predicted[0])
+        if predictions.append(predicted[0])
         m = mode(predictions)
         print get_time_string(sample_rate, wav.tell())
         print 'prediction: ' + classnames[predicted[0]]

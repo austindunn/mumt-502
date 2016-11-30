@@ -25,11 +25,25 @@ def ask(model_path, test_path, num_test_samples):
     saver = tf.train.Saver()
     saver.restore(sess, model_path)
 
+    # variables for creating confusion matrix
+    # first name is correct, second name is the prediction by the model
+    confusion_dict = {
+        'hillary_trump': 0,
+        'hillary_lester': 0,
+        'hillary_hillary': 0,
+        'lester_trump': 0,
+        'lester_lester': 0,
+        'lester_hillary': 0,
+        'trump_trump': 0,
+        'trump_lester': 0,
+        'trump_hillary': 0
+    }
+
     for class_no in range(len(classnames)):
         print 'Looking at files for class: ' + classnames[class_no]
         indices = numpy.arange(len(glob(test_path + classnames[class_no] + '/*.png')))
+        numpy.random.shuffle(indices)
         # numpy.random.shuffle(indices)
-        print indices
         class_dir = test_path + classnames[class_no] + '/'
         total_test_samples = len(glob(class_dir + '*.png'))
         samples_to_get = num_test_samples if (num_test_samples < total_test_samples) else total_test_samples
@@ -38,7 +52,12 @@ def ask(model_path, test_path, num_test_samples):
             im = class_dir + str(indices[sample]) + '.png'
             flat = flatten_image(im)
             predicted = prediction.eval(session=sess, feed_dict={x: [flat]})
+            confusion_key = classnames[class_no] + '_' + classnames[predicted[0]]
+            confusion_dict[confusion_key] += 1
             print classnames[predicted[0]]
+        print confusion_dict
+    print "Here's the confusion dictionary: first name is the correct answer, second is the predictino made by the model."
+    print confusion_dict
 
 
 def get_config_data(model_path):
@@ -62,7 +81,8 @@ def flatten_image(filepath):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    print len(sys.argv)
+    if len(sys.argv) != 4:
         print "Incorrect usage, please see top of file."
         exit()
     model_path = sys.argv[1]
