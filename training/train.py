@@ -92,7 +92,6 @@ def get_data_info(datapath):
     spectro_width, spectro_height = Image.open(datapath + first_classname + '/' + '0.png').size
     # verify that spectrograms are (probably) all the same size
     for classname in classnames:
-        print datapath + classname
         num_items = len(glob(datapath + classname + '/*.png'))
         rand_item = random.randrange(0, num_items)
         width, height = Image.open(datapath + classname + '/' + str(rand_item) + ".png").size
