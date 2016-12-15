@@ -25,7 +25,7 @@ where
 """
 
 
-def train_test_save(datapath, train_loops, train_samples, test_loops, test_samples, save_path):
+def train_test_save(datapath, train_loops, train_samples, test_loops, test_samples, save_path = None):
     training_dir = datapath + "training/"
     # set up our model
     tensor_size, classnames, num_classes = get_data_info(training_dir)
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 6:
         print "Incorrect usage"
         exit()
-    train_path = sys.argv[1]
+    datapath = sys.argv[1]
     train_loops = sys.argv[2]
     train_samples = sys.argv[3]
     test_loops = sys.argv[4]
@@ -166,5 +166,5 @@ if __name__ == "__main__":
     if (len(sys.argv) > 6):
         save_path = sys.argv[6]
     else: save_path = None
-    train_test_save(train_path, int(train_loops), int(train_samples), int(test_loops), int(test_samples), save_path)
+    train_test_save(datapath, int(train_loops), int(train_samples), int(test_loops), int(test_samples), save_path)
 

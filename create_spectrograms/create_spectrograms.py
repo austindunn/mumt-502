@@ -2,14 +2,15 @@
 This script creates a bunch of square spectrograms from short audio clips.
 
 Usage: python create_spectrograms.py [class_dir] [destination] [frame length]
-                                     [image size] [greyscale]
-                                     where...
-[class_dir] is the name of the directory containing directories named for
-    each class, which in turn contain wav files to be turned into spectrograms
-[destination] is the directory to save the spectrograms to
-[frame length] is how long each frame to be FFT'd should be
-[image size] is the height and width of resulting spectrogram images
-[greyscale] is either 0 or 1, indicating whether the images should be in greyscale or color
+                                     [image size] [amp_threshold]
+where...
+    [class_dir] is the name of the directory containing directories named for
+        each class, which in turn contain wav files to be turned into spectrograms
+    [destination] is the directory to save the spectrograms to
+    [frame length] is how long each frame to be FFT'd should be
+    [image size] is the height and width of resulting spectrogram images
+    [amp_threshold] is the minimum average amplitude (sample value) of each frame that
+        will be treated as a valid frame and made a spectrogram of
 """
 
 import sys

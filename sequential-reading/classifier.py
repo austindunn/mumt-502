@@ -40,7 +40,7 @@ def read_and_predict(model_path, wav_path, frame_length, deque_size):
 
     print 'Starting classification... Examining ' + str(num_windows) + ' windows.'
     while wav.tell() + frame_length < num_frames or len(predictions) > deque_size/2:
-        if (wav.tell() > 0 and wav.tell() % (sample_rate * 60) == 0):
+        if (wav.tell() > 0 and wav.tell() % (sample_rate * 5) == 0):
             output_stats(wav.tell(), sample_rate, points_per_class)
 
         # last set of iterations will only depend on predictions deque, no new spectrograms
