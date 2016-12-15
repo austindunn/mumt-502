@@ -21,7 +21,7 @@ from glob import glob
 from PIL import Image, ImageChops
 
 
-def create_spectrograms(class_dir, destination, frame_length, image_size, greyscale):
+def create_spectrograms(class_dir, destination, frame_length, image_size, amp_threshold):
     classnames = [os.path.basename(clas) for clas in glob(class_dir + '*')]
     for classname in classnames:
         print 'Creating spectrograms for class ' + classname + '.'
@@ -39,7 +39,7 @@ def create_spectrograms(class_dir, destination, frame_length, image_size, greysc
                 sound_info = pylab.fromstring(frames, 'Int16')
                 amps = numpy.absolute(sound_info)
                 # filter out windows with low amplitudes (i.e. no vocal information)
-                if (amps.mean() < 1000):
+                if (amps.mean() < amp_threshold):
                     continue
                 # split training:testing 7:1
                 if (count > 1):
@@ -54,7 +54,7 @@ def create_spectrograms(class_dir, destination, frame_length, image_size, greysc
                 pylab.savefig(filename + '.png')
                 pylab.close()
                 im = Image.open(filename + '.png')
-                im = customize(im, image_size, greyscale)
+                im = customize(im, image_size)
                 im.save(filename + '.png')
                 os.rename(filename + '.png', full_dest + filename + '.png') 
                 # logging
@@ -78,7 +78,7 @@ def create_class_dirs(destination, classname):
         os.mkdir(destination + 'testing/' + classname)
 
 
-def customize(im, image_size, greyscale):
+def customize(im, image_size):
     bg = Image.new(im.mode, im.size, im.getpixel((0,0)))
     diff = ImageChops.difference(im, bg)
     diff = ImageChops.add(diff, diff, 2.0, -100)
@@ -96,5 +96,5 @@ if __name__ == "__main__":
     destination = sys.argv[2]
     frame_length = sys.argv[3]
     image_size = sys.argv[4]
-    greyscale = sys.argv[5]
-    create_spectrograms(directory, destination, int(frame_length), int(image_size), int(greyscale))
+    amp_threshold = sys.argv[5]
+    create_spectrograms(directory, destination, int(frame_length), int(image_size), int(amp_threshold))
