@@ -24,7 +24,7 @@ def read_and_predict(model_path, wav_path, frame_length, deque_size):
     prediction = tf.argmax(y,1)
     sess = tf.Session()
 
-    # restore trained & saved tensorflow model
+    #restore trained & saved tensorflow model
     saver = tf.train.Saver()
     saver.restore(sess, model_path)
 
@@ -36,42 +36,83 @@ def read_and_predict(model_path, wav_path, frame_length, deque_size):
 
     # variables for analysis
     predictions = deque([], deque_size)
-    points_per_class = dict((classname, 0) for classname in classnames)
+    time_per_class = dict((classname, 0) for classname in classnames)
+    predictions_this_sec = []
+    samples_remaining_this_sec = sample_rate
+    frames_examined_this_sec = 0
+    crt_sec = 0
+    seconds_ignored = 0
+    print crt_sec
 
     print 'Starting classification... Examining ' + str(num_windows) + ' windows.'
-    while wav.tell() + frame_length < num_frames or len(predictions) > deque_size/2:
-        if (wav.tell() > 0 and wav.tell() % (sample_rate * 60) == 0):
-            output_stats(wav.tell(), sample_rate, points_per_class)
-
-        # last set of iterations will only depend on predictions deque, no new spectrograms
-        if wav.tell() + frame_length >= num_frames:
-            predictions.popleft()
-            m = mode(predictions)
-            points_per_class[classnames[m.mode[0]]] += 1
-            continue
+    while (wav.tell() + frame_length) < num_frames:
+        #print 'current second: ' + str(crt_sec) + ', wav.tell: ' + str(wav.tell()) + ', samples remaining: ' + str(samples_remaining_this_sec) 
+        """
+        if get_second(sample_rate, wav.tell()) != crt_sec:
+            seconds_ignored += 1
+            predictions_this_sec = []
+            samples_remaining_this_sec = sample_rate
+            frames_examined_this_sec = 0
+            crt_sec = get_second(sample_rate, wav.tell())
+            print crt_sec
+        """
 
         frames = wav.readframes(frame_length)
         sound_info = pylab.fromstring(frames, 'Int16')
         amps = numpy.absolute(sound_info)
 
+        # samples_remaining_this_sec -= frame_length
+
         # ignore frames with low amplitudes
-        # TODO: get amplitude threshold from config file
-        if amps.mean() < 1000 and len(predictions) > deque_size/2:
-            points_per_class[classnames[m.mode[0]]] += 1
-            continue
-        elif amps.mean() < 1000:
+        if (amps.mean() < 1000):
             continue
 
+        # print 'DING!'
+
+        # frames_examined_this_sec += 1
         flat_spectro = create_flat_spectrogram(sound_info, frame_length, sample_rate)
 
         predicted = prediction.eval(session=sess, feed_dict={x: flat_spectro})
         predictions.append(predicted[0])
+        #predictions_this_sec.append(predicted[0])
+        #if len(predictions) > deque_size/2 and True == False:
         if len(predictions) > deque_size/2:
             m = mode(predictions)
-            points_per_class[classnames[m.mode[0]]] += 1
+            print '------------------------------------------------'
+            print get_crt_time_string(sample_rate, wav.tell())
+            print 'mode of prediction list: ' + classnames[m.mode[0]]
+            print 'predictions list: ' + str(predictions)
 
-    output_stats(num_frames, sample_rate, points_per_class)
-    return 
+        """
+        # second-to-second logic 
+        if frames_examined_this_sec > 2 and float(mode(predictions_this_sec).count[0]) / float(len(predictions_this_sec)) >= 0.8:
+            time_per_class[classnames[mode(predictions_this_sec).mode[0]]] += 1
+            print '----------------------------------------'
+            print 'second elapsed: ' + str(crt_sec)
+            print time_per_class
+            # print stats and exit if not enough samples left for another frame
+            if wav.tell() + samples_remaining_this_sec >= num_frames:
+                output_stats(crt_sec, seconds_ignored, time_per_class)
+                return
+
+            if crt_sec > 0 and crt_sec % 60 == 0:
+                m = mode(predictions)
+                print '============================================='
+                print get_readable_time(crt_sec) + ', currently speaking: ' + classnames[m.mode[0]]
+                prettyprint_time_dict(time_per_class)
+                print '============================================='
+
+            # print time_per_class
+            wav.setpos(wav.tell() + samples_remaining_this_sec)
+            predictions_this_sec = []
+            samples_remaining_this_sec = sample_rate
+            frames_examined_this_sec = 0
+            crt_sec += 1
+            print crt_sec
+            continue
+        """
+    # output_stats(crt_sec, seconds_ignored, time_per_class)
+    return
 
 
 def get_config_data(model_path):
@@ -117,18 +158,11 @@ def squarify(im, image_size):
     return im
 
 
-def get_crt_time_string(sample_rate, current_pos, frame_length, deque_size, end = 0, deque_length = None):
-    # account for delay in calculations by moving current_pos back
-    if (end < 1):
-        current_pos -= (frame_length * (deque_size/2))
-    else:
-        delay = abs((deque_size/2) - deque_length)
-        current_pos -= (frame_length * delay)
-
+def get_crt_time_string(sample_rate, current_pos):
     if (current_pos % sample_rate == 0):
         milli = 0
     else:
-        milli = int(1000.0 / (float(sample_rate) / float(current_pos % sample_rate)))
+        milli = int((1.0 / (float(sample_rate) / float(current_pos % sample_rate))) * 100.0)
     sec = (current_pos / sample_rate) % 60
     minute = ((current_pos / sample_rate) - sec) / 60
 
@@ -144,23 +178,26 @@ def get_crt_time_string(sample_rate, current_pos, frame_length, deque_size, end 
     return minute_str + ':' + sec_str + '.' + milli_str
 
 
+
 def get_second(sample_rate, current_pos):
     return current_pos / sample_rate
 
+def update_sec_dict(sec_dict, second):
+    if second not in sec_dict:
+        sec_dict[second] = 1
+        return
+    sec_dict[second] += 1
+    return
 
-def output_stats(num_frames, sample_rate, points_per_class):
-    total_points = sum(points_per_class.values())
-    total_seconds = num_frames / sample_rate
 
-    stats_string = '======================STATS=======================\n'
-    stats_string += 'Total time ' + get_readable_time(total_seconds) + '\n'
-    for key, value in points_per_class.iteritems():
-        stats_string += '--------------------------------------------------\n'
-        class_proportion = 0 if total_points == 0 else float(value) / float(total_points)
-        class_total_seconds = class_proportion * total_seconds
-        stats_string += key + ' spoke for ' + get_readable_time(int(class_total_seconds)) + '\n'
-    stats_string += '=================================================='
-    print stats_string
+def output_stats(crt_sec, seconds_ignored, time_per_class):
+    print '======================STATS======================='
+    print 'Total time of recording ' + get_readable_time(crt_sec)
+    print '--------------------------------------------------'
+    print 'Total time ignored ' + get_readable_time(seconds_ignored)
+    print '--------------------------------------------------'
+    prettyprint_time_dict(time_per_class)
+    print '=================================================='
 
 
 def get_readable_time(total_seconds):
@@ -172,12 +209,19 @@ def get_readable_time(total_seconds):
     return str(hours) + ':' + str(minutes) + ':' + str(seconds)
 
 
+def prettyprint_time_dict(time_dict):
+    for key, value in time_dict.iteritems():
+        print '------------------------------------------------'
+        print key + ' spoke for ' + get_readable_time(value)
+
+
 if __name__ == "__main__":
-    if len(sys.argv) < 5:
+    if len(sys.argv) < 3:
         print "Incorrect usage, please see top of file."
         exit()
     model_path = sys.argv[1]
     wav_path = sys.argv[2]
     frame_length = int(sys.argv[3])
     deque_size = int(sys.argv[4])
+    # frame_length = sys.argv[3]
     read_and_predict(model_path, wav_path, frame_length, deque_size)

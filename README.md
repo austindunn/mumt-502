@@ -141,3 +141,14 @@ The directory passed to my train function contains two subdirectories: *training
 *November 29, 2016*
 * fixed local minima error, fixed data so that lester is guessed accurately (problem was a stereo file being used to generate spectrograms, instead of mono).
 * updated restore\_test.py to generate a confusion matrix. Results on the current three-class model (stored in three-class/three-class.ckpt) show about 90% accuracy for Hillary and Trump each, around 85% for Lester).
+
+*December 11, 2016*
+* fixed organization of spectrograms created by create\_spectrograms.py
+ * necessary non-existent directories will be created
+
+*December 14, 2016*
+* One version of the classification file is now complete, it determines who's talking frame by frame. 
+ * Running a test on this classification file, using the whole first debate and some statistics from ABC on who spoke the most. According to ABC, I should expect to see that Hillary spoke for a total of 41 minutes and 50 seconds, and that Trump spoke for a total of 45 minutes and 3 seconds.
+
+*December 15, 2016*
+* To my great frustration, somewhere just at the end of the debate recording (the program logged the statistics at the 1:32:00.000 mark, total length of the file is 1:32:43.130), my computer crashed and I did not receive the final statistics. I'll be running a shorter test tonight to see why this happened - the program hasn't crashed when analyzing much shorter (i.e. < 1 minute) recordings
