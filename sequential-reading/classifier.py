@@ -37,14 +37,19 @@ def read_and_predict(model_path, wav_path, frame_length, deque_size):
     # variables for analysis
     predictions = deque([], deque_size)
     points_per_class = dict((classname, 0) for classname in classnames)
+    count = 0
+    start_points = 0
+    start_frame = -1
 
     print 'Starting classification... Examining ' + str(num_windows) + ' windows.'
-    while wav.tell() + frame_length < num_frames or len(predictions) > deque_size/2:
+    while wav.tell() + frame_length <= num_frames or len(predictions) > deque_size/2:
+        if (start_frame < 0):
+            count += 1
         if (wav.tell() > 0 and wav.tell() % (sample_rate * 5) == 0):
             output_stats(wav.tell(), sample_rate, points_per_class)
 
         # last set of iterations will only depend on predictions deque, no new spectrograms
-        if wav.tell() + frame_length >= num_frames:
+        if wav.tell() + frame_length > num_frames:
             predictions.popleft()
             m = mode(predictions)
             points_per_class[classnames[m.mode[0]]] += 1
@@ -54,14 +59,25 @@ def read_and_predict(model_path, wav_path, frame_length, deque_size):
         sound_info = pylab.fromstring(frames, 'Int16')
         amps = numpy.absolute(sound_info)
 
-        # ignore frames with low amplitudes
+        # if talking has begun, award silent frames to current speaker
         # TODO: get amplitude threshold from config file
-        if amps.mean() < 1000 and len(predictions) > deque_size/2:
+        if len(predictions) == deque_size/2 and start_frame > -1:
+            m = mode(predictions)
+            start_points += 1
+            points_per_class[classnames[m.mode[0]]] += start_points
+            start_frame = -1
+            continue
+        elif amps.mean() < 1000 and len(predictions) > deque_size/2:
+            m = mode(predictions)
             points_per_class[classnames[m.mode[0]]] += 1
+            continue
+        elif amps.mean() < 1000 and start_frame > -1:
+            start_points += 1
             continue
         elif amps.mean() < 1000:
             continue
 
+        # frame is valid
         flat_spectro = create_flat_spectrogram(sound_info, frame_length, sample_rate)
 
         predicted = prediction.eval(session=sess, feed_dict={x: flat_spectro})
@@ -69,6 +85,9 @@ def read_and_predict(model_path, wav_path, frame_length, deque_size):
         if len(predictions) > deque_size/2:
             m = mode(predictions)
             points_per_class[classnames[m.mode[0]]] += 1
+        elif len(predictions) > 0 and start_frame < 0:
+            start_frame = count
+            start_points += 1
 
     output_stats(num_frames, sample_rate, points_per_class)
     return 
@@ -152,6 +171,7 @@ def output_stats(num_frames, sample_rate, points_per_class):
     total_points = sum(points_per_class.values())
     total_seconds = num_frames / sample_rate
 
+    print points_per_class
     stats_string = '======================STATS=======================\n'
     stats_string += 'Total time ' + get_readable_time(total_seconds) + '\n'
     for key, value in points_per_class.iteritems():
