@@ -1,15 +1,15 @@
 """
 This script creates a bunch of square spectrograms from short audio clips.
 
-Usage: python create_spectrograms.py [class_dir] [destination] [frame length]
-                                     [image size] [amp_threshold]
+Usage: python create_spectrograms.py [class dir] [destination] [frame length]
+                                     [image size] [amp threshold]
 where...
-    [class_dir] is the name of the directory containing directories named for
+    [class dir] is the name of the directory containing directories named for
         each class, which in turn contain wav files to be turned into spectrograms
     [destination] is the directory to save the spectrograms to
     [frame length] is how long each frame to be FFT'd should be
     [image size] is the height and width of resulting spectrogram images
-    [amp_threshold] is the minimum average amplitude (sample value) of each frame that
+    [amp threshold] is the minimum average amplitude (sample value) of each frame that
         will be treated as a valid frame and made a spectrogram of
 """
 
@@ -24,46 +24,44 @@ from PIL import Image, ImageChops
 
 def create_spectrograms(class_dir, destination, frame_length, image_size, amp_threshold):
     classnames = [os.path.basename(clas) for clas in glob(class_dir + '*')]
+    total_count = 0
     for classname in classnames:
-        print 'Creating spectrograms for class ' + classname + '.'
+        print '=================================================='
+        print 'Creating spectrograms for class "' + classname + '"'
+        print '=================================================='
         create_class_dirs(destination, classname)
         wavs = glob(class_dir + classname + '/*.wav')
-        count = 0
+        class_count = 0
         for wav_file in wavs:
             wav = wave.open(wav_file, 'r')
             num_frames = wav.getnframes()
             sample_rate = wav.getframerate()
             num_windows = num_frames/frame_length
-            print 'Creating spectrograms for file ' + wav_file + '... Examining ' + str(num_windows) + ' windows.'
+            print 'Now creating spectrograms for file ' + wav_file + '... Examining ' + str(num_windows) + ' windows.'
             while (wav.tell() + frame_length) < num_frames:
                 frames = wav.readframes(frame_length)
                 sound_info = pylab.fromstring(frames, 'Int16')
                 amps = numpy.absolute(sound_info)
-                # filter out windows with low amplitudes (i.e. no vocal information)
+
+                # ignore windows with low amplitudes (i.e. lack of vocal information)
                 if (amps.mean() < amp_threshold):
                     continue
+
                 # split training:testing 7:1
-                if (count > 1):
-                    filename = str(count/7) if (count % 7 == 0) else str(count - (count/7) - 1)
+                if (class_count > 1):
+                    filename = str(class_count/7) if (class_count % 7 == 0) else str(class_count - (class_count/7) - 1)
                 else:
                     filename = '0'
-                full_dest = destination + 'testing/' + classname + '/' if (count % 7 == 0) else destination + 'training/' + classname + '/'
-                # create, edit, and place the spectrogram image
-                pylab.figure(num=None, figsize=(19, 12))
-                pylab.axis('off')
-                pylab.specgram(sound_info, NFFT=frame_length, Fs=sample_rate)
-                pylab.savefig(filename + '.png')
-                pylab.close()
-                im = Image.open(filename + '.png')
-                im = customize(im, image_size)
-                im.save(filename + '.png')
-                os.rename(filename + '.png', full_dest + filename + '.png') 
-                # logging
-                if (count % 100 == 1 and count > 1):
-                    print 'Created ' + str(count-1) + ' spectrograms so far. ' + str(wav.tell()/frame_length) + ' windows examined of file ' + wav_file + '.'
-                count += 1
+                full_dest = destination + 'testing/' + classname + '/' if (class_count % 7 == 0) else destination + 'training/' + classname + '/'
+
+                create_new_spectrogram(sound_info, frame_length, sample_rate, filename, image_size, full_dest)
+
+                class_count += 1
+                total_count += 1
             wav.close()
-    print 'All finished! ' + str(count) + ' spectrograms created.'
+        print 'Finished creating spectrograms for class "' + classname + '". ' + str(class_count) + ' spectrograms created for this class.'
+    print '--------------------------------------------------'
+    print 'All finished! A total of ' + str(total_count) + ' spectrograms was created.' 
 
 
 def create_class_dirs(destination, classname):
@@ -79,6 +77,21 @@ def create_class_dirs(destination, classname):
         os.mkdir(destination + 'testing/' + classname)
 
 
+def create_new_spectrogram(sound_info, frame_length, sample_rate, filename, image_size, full_dest):
+    pylab.figure(num=None, figsize=(19, 12))
+    pylab.axis('off')
+    pylab.specgram(sound_info, NFFT=frame_length, Fs=sample_rate)
+    pylab.savefig(filename + '.png')
+    pylab.close()
+
+    im = Image.open(filename + '.png')
+    im = customize(im, image_size)
+    im.save(filename + '.png')
+
+    os.rename(filename + '.png', full_dest + filename + '.png')
+    return
+
+
 def customize(im, image_size):
     bg = Image.new(im.mode, im.size, im.getpixel((0,0)))
     diff = ImageChops.difference(im, bg)
@@ -91,9 +104,9 @@ def customize(im, image_size):
 
 
 if __name__ == "__main__":
-    directory = sys.argv[1]
+    class_dir = sys.argv[1]
     destination = sys.argv[2]
     frame_length = sys.argv[3]
     image_size = sys.argv[4]
     amp_threshold = sys.argv[5]
-    create_spectrograms(directory, destination, int(frame_length), int(image_size), int(amp_threshold))
+    create_spectrograms(class_dir, destination, int(frame_length), int(image_size), int(amp_threshold))
