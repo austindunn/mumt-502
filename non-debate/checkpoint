@@ -1,0 +1,2 @@
+model_checkpoint_path: "non-debate"
+all_model_checkpoint_paths: "non-debate"

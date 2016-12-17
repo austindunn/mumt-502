@@ -56,7 +56,7 @@ def ask(model_path, test_path, num_test_samples):
             confusion_dict[confusion_key] += 1
             print classnames[predicted[0]]
         print confusion_dict
-    print "Here's the confusion dictionary: first name is the correct answer, second is the predictino made by the model."
+    print "Here's the confusion dictionary: first name is the correct answer, second is the prediction made by the model."
     print confusion_dict
 
 

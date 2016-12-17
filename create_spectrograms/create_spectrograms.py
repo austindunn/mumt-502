@@ -87,8 +87,6 @@ def customize(im, image_size):
     if bbox:
         im = im.crop(bbox)
     im = im.resize((image_size, image_size))
-    if greyscale:
-        im = im.convert('L')
     return im
 
 
