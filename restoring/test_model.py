@@ -10,7 +10,13 @@ from ConfigParser import ConfigParser
 This script is used to load previously trained TF models and allow them to
     evaluate real data.
 
-Usage: TODO
+Usage: python restore_test.py [model path] [test path] [num test samples]
+where
+    [model path] is the path to a trained and saved TensorFlow model
+    [test path] is the path to the directory containing test data, organized
+        in subdirectories named for each class
+    [num test samples] is the number of samples (spectrograms) to look at
+        for each class
 """
 
 def ask(model_path, test_path, num_test_samples):
@@ -25,26 +31,20 @@ def ask(model_path, test_path, num_test_samples):
     saver = tf.train.Saver()
     saver.restore(sess, model_path)
 
-    # variables for creating confusion matrix
-    # first name is correct, second name is the prediction by the model
-    confusion_dict = {
-        'hillary_trump': 0,
-        'hillary_lester': 0,
-        'hillary_hillary': 0,
-        'lester_trump': 0,
-        'lester_lester': 0,
-        'lester_hillary': 0,
-        'trump_trump': 0,
-        'trump_lester': 0,
-        'trump_hillary': 0
-    }
+    # initialize confusion matrix (as dictionary)
+    # first name is correct answer, second name is the prediction
+    confusion_dict = {}
+    for correct_class in classnames:
+        for guess_class in classnames:
+            confusion_dict[correct_class + '_' + guess_class] = 0
 
-    for class_no in range(len(classnames)):
-        print 'Looking at files for class: ' + classnames[class_no]
-        indices = numpy.arange(len(glob(test_path + classnames[class_no] + '/*.png')))
+    for classname in classnames:
+        print '--------------------------------------------------'
+        print 'Looking at files for class: "' + classname + '"'
+        indices = numpy.arange(len(glob(test_path + classname + '/*.png')))
         numpy.random.shuffle(indices)
         # numpy.random.shuffle(indices)
-        class_dir = test_path + classnames[class_no] + '/'
+        class_dir = test_path + classname + '/'
         total_test_samples = len(glob(class_dir + '*.png'))
         samples_to_get = num_test_samples if (num_test_samples < total_test_samples) else total_test_samples
         # each sample in the class
@@ -52,12 +52,14 @@ def ask(model_path, test_path, num_test_samples):
             im = class_dir + str(indices[sample]) + '.png'
             flat = flatten_image(im)
             predicted = prediction.eval(session=sess, feed_dict={x: [flat]})
-            confusion_key = classnames[class_no] + '_' + classnames[predicted[0]]
+            confusion_key = classname + '_' + classnames[predicted[0]]
             confusion_dict[confusion_key] += 1
-            print classnames[predicted[0]]
-        print confusion_dict
-    print "Here's the confusion dictionary: first name is the correct answer, second is the prediction made by the model."
+        print 'Correct guesses for class "' + classname + ': ' + str(confusion_dict[classname + '_' + classname]) + '/' + str(samples_to_get)
+
+    print '=================================================='
+    print 'Here\'s the confusion dictionary: first name is the correct answer, second is the prediction made by the model.'
     print confusion_dict
+    return
 
 
 def get_config_data(model_path):
