@@ -27,8 +27,9 @@ where
 
 def train_test_save(datapath, train_loops, train_samples, test_loops, test_samples, save_path = None):
     training_dir = datapath + "training/"
-    # set up our model
     tensor_size, classnames, num_classes = get_data_info(training_dir)
+
+    # set up our model
     x = tf.placeholder(tf.float32, [None, tensor_size])
     W = tf.Variable(tf.zeros([tensor_size, num_classes]), name="weights")
     b = tf.Variable(tf.zeros([num_classes]), name="bias")
@@ -36,8 +37,6 @@ def train_test_save(datapath, train_loops, train_samples, test_loops, test_sampl
     y_ = tf.placeholder(tf.float32, [None, num_classes])
     cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(y, y_))
     train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
-    guess = tf.argmax(y,1)
-    right = tf.argmax(y_,1)
     correct_prediction = tf.equal(tf.argmax(y,1), tf.argmax(y_,1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     init = tf.initialize_all_variables()
@@ -45,7 +44,7 @@ def train_test_save(datapath, train_loops, train_samples, test_loops, test_sampl
     sess = tf.Session()
     sess.run(init)
 
-    # apply dropout
+    # for applying dropout on training operation
     keep_prob = tf.placeholder(tf.float32)
 
     # in each training step, ...
@@ -74,13 +73,13 @@ def train_test_save(datapath, train_loops, train_samples, test_loops, test_sampl
     accuracies = []
     for test in range(test_loops):
         testing_data, testing_labels = get_test_data(datapath, classnames, test_samples)
-        # print testing_data, testing_labels
         success_rate = sess.run(accuracy, feed_dict={x: testing_data, y_: testing_labels, keep_prob: 1.0})
         print 'Test number: ' + str(test+1) + '. Success rate: ' + str(success_rate*100) + '%'
         accuracies.append(success_rate)
     avg = numpy.mean(accuracies)
     print 'This model tested with an average success rate of ' + str(avg*100) + '%'
 
+    # save model to path specified (if specified at all)
     if (save_path != None):
         make_config_file(save_path, tensor_size, num_classes, classnames)
         saver.save(sess, save_path)
@@ -90,12 +89,14 @@ def get_data_info(datapath):
     classnames = [os.path.basename(clas) for clas in glob(datapath + '*')]
     first_classname = classnames[0]
     spectro_width, spectro_height = Image.open(datapath + first_classname + '/' + '0.png').size
+
     # verify that spectrograms are (probably) all the same size
     for classname in classnames:
         num_items = len(glob(datapath + classname + '/*.png'))
         rand_item = random.randrange(0, num_items)
         width, height = Image.open(datapath + classname + '/' + str(rand_item) + ".png").size
         assert (width == spectro_width and height == spectro_height), "Image size error: Found two spectrograms with differing dimensions"
+
     # 4 values per pixel (red, green, blue, opacity)
     tensor_size = 4 * spectro_width * spectro_height
     num_classes = len(classnames)
