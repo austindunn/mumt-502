@@ -3,18 +3,19 @@ import pylab
 import numpy
 import sys
 import wave
+import os
 from scipy.stats import mode
 from collections import deque
 from PIL import Image, ImageChops
 from ConfigParser import ConfigParser
 
 """
-This script will be given a file and will classify audio frame-to-frame.
+This script will generate simple stats on an audio file, given a trained TensorFlow model
 
-Usage: TODO
+Usage: python classifier.py 
 """
 
-def read_and_predict(model_path, wav_path, frame_length, deque_size):
+def read_and_predict(model_path, wav_path, frame_length, amp_threshold, logging_freq):
     # set up variables for model to be read into
     tensor_size, num_classes, classnames = get_config_data(model_path)
     x = tf.placeholder(tf.float32, [None, tensor_size])
@@ -35,60 +36,57 @@ def read_and_predict(model_path, wav_path, frame_length, deque_size):
     num_windows = num_frames/frame_length
 
     # variables for analysis
+    deque_size = 20
     predictions = deque([], deque_size)
     points_per_class = dict((classname, 0) for classname in classnames)
-    start_count = 0
     start_points = 0
-    start_frame = -1
+    talking_started = False
 
     print 'Starting classification... Examining ' + str(num_windows) + ' windows.'
-    while wav.tell() + frame_length <= num_frames or len(predictions) > deque_size/2:
-        if (start_frame < 0):
-            start_count += 1
-        if (wav.tell() > 0 and wav.tell() % (sample_rate * 5) == 0):
+    while wav.tell() + frame_length <= num_frames:
+        # logging stats
+        if (wav.tell() > 0 and wav.tell() % (sample_rate * logging_freq) == 0):
             output_stats(wav.tell(), sample_rate, points_per_class)
 
-        # last set of iterations will only depend on predictions deque, no new spectrograms
-        if wav.tell() + frame_length > num_frames:
-            predictions.popleft()
+        # dump points from start of talking into most predicted class so far,
+        # only once predictions deque reaches half capacity
+        if len(predictions) == deque_size/2 and talking_started:
             m = mode(predictions)
-            points_per_class[classnames[m.mode[0]]] += 1
-            continue
+            points_per_class[classnames[m.mode[0]]] += start_points
+            # set talking_started back to false to avoid multiple-counting here
+            talking_started = False
 
+        # read frame data from wav file
         frames = wav.readframes(frame_length)
         sound_info = pylab.fromstring(frames, 'Int16')
         amps = numpy.absolute(sound_info)
 
         # if talking has begun, award silent frames to current speaker
-        # TODO: get amplitude threshold from config file
-        if len(predictions) == deque_size/2 and start_frame > -1:
-            m = mode(predictions)
-            start_points += 1
-            points_per_class[classnames[m.mode[0]]] += start_points
-            start_frame = -1
-            continue
-        elif amps.mean() < 1000 and len(predictions) > deque_size/2:
+        if amps.mean() < amp_threshold and len(predictions) >= deque_size/2:
             m = mode(predictions)
             points_per_class[classnames[m.mode[0]]] += 1
             continue
-        elif amps.mean() < 1000 and start_frame > -1:
+        elif amps.mean() < amp_threshold and talking_started:
             start_points += 1
             continue
-        elif amps.mean() < 1000:
+        elif amps.mean() < amp_threshold:
             continue
 
-        # frame is valid
+        # frame is valid, make prediction
         flat_spectro = create_flat_spectrogram(sound_info, frame_length, sample_rate)
 
         predicted = prediction.eval(session=sess, feed_dict={x: flat_spectro})
         predictions.append(predicted[0])
-        if len(predictions) > deque_size/2:
+        if len(predictions) >= deque_size/2:
             m = mode(predictions)
             points_per_class[classnames[m.mode[0]]] += 1
-        elif len(predictions) > 0 and start_frame < 0:
-            start_frame = start_count
+        else:
+            talking_started = True
             start_points += 1
 
+    if os.path.isfile('tmp.png'): os.remove('tmp.png')
+    # account for delay by awarding final frames according to mode of predictions list
+    points_per_class = finish_analysis(deque_size, predictions, points_per_class, classnames)
     output_stats(num_frames, sample_rate, points_per_class)
     return 
 
@@ -107,9 +105,9 @@ def create_flat_spectrogram(sound_info, frame_length, sample_rate):
     pylab.figure(num=None, figsize=(19, 12))
     pylab.axis('off')
     pylab.specgram(sound_info, NFFT=frame_length, Fs=sample_rate)
-    pylab.savefig('crt.png')
+    pylab.savefig('tmp.png')
     pylab.close()
-    spectro = Image.open('crt.png')
+    spectro = Image.open('tmp.png')
     spectro = squarify(spectro, 256)
     flat_spectro = flatten(spectro)
     return flat_spectro
@@ -134,37 +132,6 @@ def squarify(im, image_size):
         im = im.crop(bbox)
     im = im.resize((image_size, image_size))
     return im
-
-
-def get_crt_time_string(sample_rate, current_pos, frame_length, deque_size, end = 0, deque_length = None):
-    # account for delay in calculations by moving current_pos back
-    if (end < 1):
-        current_pos -= (frame_length * (deque_size/2))
-    else:
-        delay = abs((deque_size/2) - deque_length)
-        current_pos -= (frame_length * delay)
-
-    if (current_pos % sample_rate == 0):
-        milli = 0
-    else:
-        milli = int(1000.0 / (float(sample_rate) / float(current_pos % sample_rate)))
-    sec = (current_pos / sample_rate) % 60
-    minute = ((current_pos / sample_rate) - sec) / 60
-
-    if (milli < 10):
-        milli_str = '00' + str(milli)
-    elif (milli < 100):
-        milli_str = '0' + str(milli)
-    else:
-        milli_str = str(milli)
-    sec_str = '0' + str(sec) if sec < 10 else str(sec)
-    minute_str = '0' + str(minute) if minute < 10 else str(minute)
-    
-    return minute_str + ':' + sec_str + '.' + milli_str
-
-
-def get_second(sample_rate, current_pos):
-    return current_pos / sample_rate
 
 
 def output_stats(num_frames, sample_rate, points_per_class):
@@ -192,6 +159,14 @@ def get_readable_time(total_seconds):
     return str(hours) + ':' + str(minutes) + ':' + str(seconds)
 
 
+def finish_analysis(deque_size, predictions, points_per_class, classnames):
+    while len(predictions) > deque_size / 2:
+        predictions.popleft()
+        m = mode(predictions)
+        points_per_class[classnames[m.mode[0]]] += 1
+    return points_per_class
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 5:
         print "Incorrect usage, please see top of file."
@@ -199,5 +174,10 @@ if __name__ == "__main__":
     model_path = sys.argv[1]
     wav_path = sys.argv[2]
     frame_length = int(sys.argv[3])
-    deque_size = int(sys.argv[4])
-    read_and_predict(model_path, wav_path, frame_length, deque_size)
+    amp_threshold = int(sys.argv[4])
+    if (len(sys.argv) == 6):
+        logging_freq = int(sys.argv[5])
+    else:
+        # log every minute by default
+        logging_freq = 60
+    read_and_predict(model_path, wav_path, frame_length, amp_threshold, logging_freq)
