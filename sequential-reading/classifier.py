@@ -41,9 +41,11 @@ def read_and_predict(model_path, wav_path, frame_length, amp_threshold, logging_
     points_per_class = dict((classname, 0) for classname in classnames)
     start_points = 0
     talking_started = False
+    count = 0
 
     print 'Starting classification... Examining ' + str(num_windows) + ' windows.'
     while wav.tell() + frame_length <= num_frames:
+        count += 1
         # logging stats
         if (wav.tell() > 0 and wav.tell() % (sample_rate * logging_freq) == 0):
             output_stats(wav.tell(), sample_rate, points_per_class)
@@ -80,7 +82,7 @@ def read_and_predict(model_path, wav_path, frame_length, amp_threshold, logging_
         if len(predictions) >= deque_size/2:
             m = mode(predictions)
             points_per_class[classnames[m.mode[0]]] += 1
-        else:
+        elif count >= deque_size/2:
             talking_started = True
             start_points += 1
 

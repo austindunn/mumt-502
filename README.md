@@ -152,3 +152,7 @@ The directory passed to my train function contains two subdirectories: *training
 
 *December 15, 2016*
 * To my great frustration, somewhere just at the end of the debate recording (the program logged the statistics at the 1:32:00.000 mark, total length of the file is 1:32:43.130), my computer crashed and I did not receive the final statistics. I'll be running a shorter test tonight to see why this happened - the program hasn't crashed when analyzing much shorter (i.e. < 1 minute) recordings
+
+*December 23, 2016*
+* After doing some final code edits and refactoring, I'll be running a full test over the next day or so.
+* The portion of code destined for others to pick up and use has been moved to [this repository](https://github.com/austindunn/tf-voice-classifier).
