@@ -156,3 +156,7 @@ The directory passed to my train function contains two subdirectories: *training
 *December 23, 2016*
 * After doing some final code edits and refactoring, I'll be running a full test over the next day or so.
 * The portion of code destined for others to pick up and use has been moved to [this repository](https://github.com/austindunn/tf-voice-classifier).
+
+*December 24, 2016*
+* Final tests finished
+* All important code now over at new repo, mentioned in last entry, as well as wiki. This repository will constitute the final project submission.

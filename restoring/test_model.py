@@ -10,7 +10,7 @@ from ConfigParser import ConfigParser
 This script is used to load previously trained TF models and allow them to
     evaluate real data.
 
-Usage: python restore_test.py [model path] [test path] [num test samples]
+Usage: python test_model.py [model path] [test path] [num test samples]
 where
     [model path] is the path to a trained and saved TensorFlow model
     [test path] is the path to the directory containing test data, organized
